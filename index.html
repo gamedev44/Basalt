@@ -1,45 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
-<!-- Standard Meta Tags -->
+    <!-- Standard Meta Tags -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>BASALT // Loading Environment</title>
     <meta name="description" content="Forged in Blender. Hardened in Basalt. Experience the high-fidelity IronWill Engine powered by WebGPU.">
-    <meta name="keywords" content="Basalt, IronWill Engine, WebGPU, Blender Pipeline, 3D Rendering, Game Engine">
-    <meta name="author" content="IronWill Dynamics">
-
-    <!-- Basalt Engine & Pipeline Directives (Custom) -->
-    <meta name="basalt-render-mode" content="high-fidelity">
-    <meta name="ironwill-pipeline-version" content="1.0.4">
-    <meta name="engine-runtime" content="Basalt-WebGPU">
-    <meta name="viewport-scaling" content="adaptive-fluid">
-
-    <!-- Open Graph / Facebook / Discord / Instagram -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://yourdomain.com/">
-    <meta property="og:title" content="BASALT // Loading Environment">
-    <meta property="og:description" content="Synchronizing IronWill Pipeline... Access the next generation of browser-based fidelity.">
-    <meta property="og:image" content="https://yourdomain.com/assets/og-preview.jpg">
-    <meta property="og:site_name" content="BASALT">
-    <meta property="og:locale" content="en_US">
-
-    <!-- Twitter / X -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:url" content="https://yourdomain.com/">
-    <meta name="twitter:title" content="BASALT // IRONWILL ENGINE">
-    <meta name="twitter:description" content="Real-time WebGPU rendering. Forged in Blender. Hardened in Basalt.">
-    <meta name="twitter:image" content="https://yourdomain.com/assets/twitter-card.jpg">
-    <meta name="twitter:site" content="@BasaltEngine">
-
-    <!-- Theme & Search Appearance -->
-    <meta name="theme-color" content="#0a0b0c">
-    <meta name="robots" content="index, follow">
-    <meta name="googlebot" content="index, follow">
-    <link rel="canonical" href="https://yourdomain.com/">
-
-    <!-- Fonts Preconnect -->
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
@@ -80,13 +47,12 @@
             position: absolute;
             inset: 0;
             background-image: linear-gradient(rgba(0, 242, 255, 0.03) 1px, transparent 1px),
-                              linear-gradient(90px, rgba(0, 242, 255, 0.03) 1px, transparent 1px);
+                              linear-gradient(90deg, rgba(0, 242, 255, 0.03) 1px, transparent 1px);
             background-size: 40px 40px;
             pointer-events: none;
             z-index: 0;
         }
 
-        /* Main Container: Centering branding and progress */
         .viewport-wrapper {
             display: flex;
             flex-direction: column;
@@ -100,7 +66,6 @@
             gap: 2.5rem; 
         }
 
-        /* Brand Block - Centered Layout */
         .brand {
             display: flex;
             flex-direction: column;
@@ -151,7 +116,6 @@
             font-weight: 500;
         }
 
-        /* Progress Components */
         .loading-hub {
             width: 100%;
             max-width: 450px;
@@ -188,7 +152,6 @@
             height: 1.5em;
         }
 
-        /* Tips Display */
         .tips-panel {
             width: 100%;
             max-width: 700px;
@@ -227,7 +190,6 @@
             50% { opacity: 1; transform: scale(1.05); }
         }
 
-        /* Final Exit Transition */
         .fade-to-black {
             opacity: 0 !important;
             filter: blur(20px) !important;
@@ -238,7 +200,6 @@
 <body>
 
     <div class="viewport-wrapper" id="mainUI">
-        <!-- BRANDING: Centered Group -->
         <div class="brand">
             <svg class="logo-symbol" viewBox="0 0 100 100">
                 <path d="M20,50 L50,20 L80,50 L50,80 Z" fill="none" stroke="white" stroke-width="1.5" opacity="0.1"/>
@@ -253,7 +214,6 @@
             <div class="slogan">Forged in Blender. Hardened in Basalt.</div>
         </div>
 
-        <!-- PROGRESS: Centered Hub -->
         <div class="loading-hub">
             <div class="progress-container">
                 <div id="progress-bar"></div>
@@ -261,233 +221,19 @@
             <div class="status-text" id="status">INITIALIZING...</div>
         </div>
 
-        <!-- TIPS: Centered Display -->
         <div class="tips-panel" id="tipBox"></div>
     </div>
 
     <script>
         const LOAD_TIME_SECONDS = 15;
-        const REDIRECT_URL = "/Modules/Rendering/LiveWebEditorWViewport.html";
+        const REDIRECT_URL = "https://gamedev44.github.io/Basalt/Engine/Modules/Rendering/Live_Web_Viewport_W_Inspector.html";
         
         const MASTER_TIPS = [
-
-            "BLENDER: Press [G], [R], or [S] followed by [X], [Y], or [Z] to constrain transformation to an axis.",
-
-            "BLENDER: Use [Shift + A] to open the Add menu instantly in the viewport.",
-
-            "BLENDER: [Ctrl + B] allows you to bevel edges; use the scroll wheel to add segments.",
-
-            "BLENDER: [Alt + Left Click] on an edge selects the entire edge loop.",
-
-            "BLENDER: Press [F] to create a face or edge between selected vertices.",
-
-            "BLENDER: [I] triggers the Inset tool to create faces inside existing geometry.",
-
-            "BLENDER: [Ctrl + J] joins two or more selected objects into one mesh.",
-
-            "BLENDER: Use [H] to hide objects and [Alt + H] to reveal everything hidden.",
-
             "BLENDER: [Tab] toggles between Object and Edit mode instantly.",
-
-            "BLENDER: [Shift + S] opens the Snapping menu—essential for cursor placement.",
-
-            "BLENDER: [Ctrl + R] adds a loop cut; scroll to increase the number of cuts.",
-
-            "BLENDER: Pressing [/] on the Numpad toggles Local View for the selected object.",
-
-            "BLENDER: [K] activates the Knife tool for precision manual mesh cutting.",
-
-            "BLENDER: [M] opens the Collection menu to keep your outliner organized.",
-
-            "BLENDER: [G + G] slides a vertex or edge along its existing geometry.",
-
-            "BLENDER: [Shift + Tab] toggles Proportional Editing (O).",
-
-
-
-            // LOGIC & SYNTAX
-
-            "LOGIC: A 'Boolean' can only be True or False—perfect for checking if a player is grounded.",
-
-            "LOGIC: Use an 'Array' to store a list of items like inventory slots or enemy spawns.",
-
-            "LOGIC: 'Modulo' (%) returns the remainder of a division. It's great for looping logic.",
-
-            "LOGIC: 'Lerp' (Linear Interpolation) smoothly calculates a value between two points over time.",
-
-            "LOGIC: 'Clamp' ensures a value never goes below a minimum or above a maximum.",
-
-            "LOGIC: 'Dot Product' is used to check if an object is facing another object.",
-
-            "LOGIC: 'Cross Product' finds a vector perpendicular to two others—vital for custom physics.",
-
-            "LOGIC: Use 'If/Else' statements to handle decision-making in your game scripts.",
-
-            "LOGIC: A 'While' loop continues until a condition is met. Careful not to create infinite loops!",
-
-            "LOGIC: 'DeltaTime' represents the time between frames. Always multiply movement by it for consistency.",
-
-            "LOGIC: 'Recursive' functions call themselves. Useful for complex tree structures or UI paths.",
-
-            "LOGIC: 'State Machines' help manage complex behaviors like Idle, Run, and Jump states.",
-
-            "LOGIC: Use 'Triggers' for events (entering a room) and 'Colliders' for physical obstacles.",
-
-
-
-            // MATH OPERATORS
-
-            "MATH: [x += 5] is a shorthand for [x = x + 5]. It's cleaner and faster to write.",
-
-            "MATH: Double equals [==] checks for equality; a single equal [=] assigns a value.",
-
-            "MATH: [!=] means 'Not Equal To'. Use it to skip logic for specific objects.",
-
-            "MATH: [Math.PI] is approximately 3.14159. Use it to convert Degrees to Radians.",
-
-            "MATH: Sine and Cosine functions are the foundation of all circular and wave movement.",
-
-            "MATH: 'Normalized' vectors always have a length of 1—essential for direction calculations.",
-
-            "MATH: A 'Quaternion' represents rotation without the risk of Gimbal Lock.",
-
-            "MATH: Power [^ or **] is used for exponential growth—great for RPG leveling curves.",
-
-            "MATH: [Sqrt] calculates the square root—standard for finding distances between 3D points.",
-
-
-
-            // GAME DEV GENERAL
-
-            "DEV: 'Object Pooling' reuses objects instead of deleting them to save CPU performance.",
-
-            "DEV: Draw calls are expensive. Combine meshes using 'Atlas' textures where possible.",
-
-            "DEV: 'Frustum Culling' stops the engine from rendering objects not seen by the camera.",
-
-            "DEV: 'LOD' (Level of Detail) swaps high-poly models for low-poly ones at a distance.",
-
-            "DEV: Use 'Baking' for static lights to achieve realistic shadows without the real-time cost.",
-
-            "DEV: PBR (Physically Based Rendering) uses Albedo, Metallic, and Roughness maps.",
-
-            "DEV: 'Normal Maps' add fake depth to flat surfaces by manipulating light reflections.",
-
-            "DEV: In UI design, always test for different aspect ratios (16:9 vs 21:9).",
-
-            "DEV: 'Raycasting' shoots an invisible line to detect objects—essential for shooting mechanics.",
-
-            "DEV: Keep your textures in powers of two (512, 1024, 2048) for GPU efficiency.",
-
-            "DEV: Vertex painting is a cheap way to add color variations without extra textures.",
-
-            "DEV: Inverse Kinematics (IK) makes feet stick to uneven ground automatically.",
-
-            "DEV: Always keep a backup! Version control (Git) is your best friend.",
-
-            "DEV: Sound is 50% of the experience. Don't leave audio for the last minute.",
-
-            "DEV: Playtest early and often—your players will find bugs you never imagined.",
-
-            "DEV: Whiteboxing is the process of building levels with cubes to test gameplay before art.",
-
-            "DEV: Post-processing (Bloom, Vignette) can hide minor art flaws and unify your look.",
-
-            "DEV: The 'Golden Ratio' can help you create visually pleasing UI and level layouts.",
-
-
-
-            // BASALT SPECIFIC
-
-            "BASALT: IronWill pipelines automatically optimize shader compilation on load.",
-
-            "BASALT: Use the Basalt Inspector to live-edit Substrate material properties.",
-
-            "BASALT: Bridging Blender with Basalt allows for one-click updates to your game world.",
-
-            "BASALT: WebGPU enables desktop-class rendering inside the browser environment.",
-
-            "BASALT: The Atmos module handles dynamic day/night cycles with physically accurate scattering.",
-
-            "BASALT: Use the Echo narrative engine to link Blender node data to game events.",
-
-            "BASALT: Basalt's viewport uses a high-precision depth buffer to prevent Z-fighting.",
-
-            "BASALT: Physics sub-stepping in Basalt ensures high-speed collisions never phase through walls.",
-
-            "BASALT: Basalt's 'Substrate' materials support anisotropic highlights for brushed metal.",
-
-            "BASALT: Integrated profiling tools help you find bottleneck draw calls in real-time.",
-
-            "BASALT: Use 'Instance Rendering' for grass and debris to keep your frame rate high.",
-
-            "BASALT: The IronWill Bridge supports multi-user collaboration in the cloud.",
-
-
-
-            // ANIMATION
-
-            "ANIM: 'Squash and Stretch' gives your characters life and weight.",
-
-            "ANIM: 'Anticipation' prepares the player for an action (e.g., pulling back before a punch).",
-
-            "ANIM: 'Follow Through' ensures movement feels natural as it comes to a stop.",
-
-            "ANIM: 'Ease In' and 'Ease Out' prevent robotic, linear movements.",
-
-            "ANIM: Keyframes at the peaks of movement define the silhouette of the action.",
-
-            "ANIM: 'Onion Skinning' lets you see previous frames to ensure smooth transitions.",
-
-            "ANIM: Root Motion allows the animation to drive the physical movement of the character.",
-
-            "ANIM: Blending trees smoothly transition between walking and running animations.",
-
-            "ANIM: Use 'Inverse Kinematics' to prevent character hands from clipping through walls.",
-
-
-
-            // OPTIMIZATION
-
-            "OPT: Profiling is the first step to fixing lag. Find the heavy scripts first.",
-
-            "OPT: Reduce the number of dynamic lights. Use light probes for moving objects.",
-
-            "OPT: Compress your audio files! High-bitrate WAVs can bloat your build size.",
-
-            "OPT: Avoid using 'Update' loops for logic that only needs to happen occasionally.",
-
-            "OPT: Use 'Events' or 'Triggers' instead of checking conditions every single frame.",
-
-            "OPT: Occlusion Culling hides objects blocked by walls to save rendering power.",
-
-            "OPT: Combine small textures into a single 'Texture Atlas' to reduce draw calls.",
-
-            "OPT: Use 'Billboards' (2D sprites) for very distant trees and mountains.",
-
-            "OPT: Avoid 'Transparent' materials where 'Opaque' or 'Cutout' will work.",
-
-
-
-            // QUICK BITS
-
-            "QUICK: CTRL+Z is the most powerful tool in any software.",
-
-            "QUICK: Save often. Seriously. Do it now.",
-
-            "QUICK: A simple game that works is better than a complex one that doesn't.",
-
-            "QUICK: Drink water. Game dev is a marathon, not a sprint.",
-
-            "QUICK: Most bugs are just typos. Check your semicolons.",
-
-            "QUICK: Comments in code explain 'Why', not 'What'.",
-
-            "QUICK: Optimization is the root of all evil—until you actually need it.",
-
-            "QUICK: Simple shapes make the best prototypes.",
-
-            "QUICK: Learn the engine, but master the logic."
+            "LOGIC: 'Lerp' (Linear Interpolation) smoothly calculates values between two points.",
+            "MATH: [x += 5] is shorthand for [x = x + 5]. Cleaner and faster.",
+            "BASALT: WebGPU enables desktop-class rendering inside the browser.",
+            "QUICK: Save often. Seriously. Do it now."
         ];
 
         const sessionTips = [...MASTER_TIPS].sort(() => Math.random() - 0.5);
@@ -516,6 +262,15 @@
         }
 
         function startLoading() {
+            // PREVENTION: Check if we just came from a redirect to avoid loops
+            if (sessionStorage.getItem('basalt_redirected') === 'true') {
+                console.log("Redirect loop detected. Stopping auto-redirect.");
+                statusText.innerText = "ENVIRONMENT READY // STANDBY";
+                progressBar.style.width = "100%";
+                showNextTip();
+                return; 
+            }
+
             let startTime = Date.now();
             let duration = LOAD_TIME_SECONDS * 1000;
 
@@ -527,26 +282,23 @@
                 let progress = Math.min((elapsed / duration) * 100, 100);
                 progressBar.style.width = `${progress}%`;
 
-                // Requested Status Flow
-                if (progress < 25) statusText.innerText = "INITIALIZING KERNEL...";
-                else if (progress < 40) statusText.innerText = "SCANNING FOR BLENDER PIPELINE...";
-                else if (progress < 60) statusText.innerText = "NO ACTIVE BRIDGE DETECTED // PREPARING OFFLINE CACHE";
-                else if (progress < 95) statusText.innerText = "ALLOCATING VIRTUAL RECOURCES...";
-                else if (progress < 110) statusText.innerText = "BUFFERING GEOMETRY...";
-                else if (progress < 120) statusText.innerText = "COMPILING SHADERS...";
+                if (progress < 40) statusText.innerText = "SCANNING FOR BLENDER PIPELINE...";
+                else if (progress < 80) statusText.innerText = "ALLOCATING VIRTUAL RESOURCES...";
+                else if (progress < 98) statusText.innerText = "COMPILING SHADERS...";
                 else statusText.innerText = "SYNCHRONIZING VIEWPORT...";
 
                 if (progress >= 100) {
                     clearInterval(progressInterval);
                     clearInterval(tipInterval);
                     
-                    // Small delay to register completeness before transition
                     setTimeout(() => {
                         mainUI.classList.add('fade-to-black');
                         
-                        // Execute redirect after fade duration
+                        // Set the flag before redirecting
+                        sessionStorage.setItem('basalt_redirected', 'true');
+                        
                         setTimeout(() => {
-                            window.location.href = https://gamedev44.github.io/Basalt/Engine/Modules/Rendering/Live_Web_Viewport_W_Inspector.html;
+                            window.location.href = REDIRECT_URL;
                         }, 1600);
                     }, 500);
                 }
