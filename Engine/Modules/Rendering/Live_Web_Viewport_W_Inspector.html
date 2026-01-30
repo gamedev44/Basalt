@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iron Will First Person WebGPU Engine Editor Viewport with Babylon 8 and HavokSDK 5 - (Experimental Renderer).</title>
+    <!-- Babylon.js Core and Dependencies -->
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+    <script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
+    <!-- Required for Inspector/Explorer -->
+    <script src="https://cdn.babylonjs.com/inspector/babylon.inspector.bundle.js"></script>
+    <style>
+        html, body { overflow: hidden; width: 100%; height: 100%; margin: 0; padding: 0; background: #000; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        #renderCanvas { width: 100%; height: 100%; touch-action: none; outline: none; }
+        
+        /* Persistent UI Overlay */
+        #ui-overlay {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 100;
+        }
+        .ui-btn {
+            background: rgba(45, 45, 45, 0.8);
+            color: white;
+            border: 1px solid #555;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 12px;
+            border-radius: 4px;
+            text-align: center;
+            transition: background 0.2s;
+            user-select: none;
+        }
+        .ui-btn:hover { background: rgba(80, 80, 80, 0.9); }
+    </style>
+</head>
+<body>
+    <div id="ui-overlay">
+        <div class="ui-btn" id="inspector-btn">🔍 Toggle Inspector</div>
+        <div class="ui-btn" id="stats-btn">📊 Toggle Stats</div>
+    </div>
+    <canvas id="renderCanvas"></canvas>
+    <script>
+        // Unchanged Constants 
+        // (Think of these like Setting a Value to a Variable By defualt and you cant de-activate this at runtime)
+        const canvas = document.getElementById("renderCanvas");
+        const engine = new BABYLON.Engine(canvas, true);
+
+
+//_____________________________________________________________________________________________________________________________\\
+
+                                // --- CUSTOM FPS BOILERPLATE CONFIGURATION --- \\
+       // This is a Set of Instance Editable Values with Exposure to Be Edited Easily for fast interations. \\
+
+
+
+                                                // MAP
+
+        // Environment
+        const MOUSE_SENSITIVITY = 0.0002;
+        const MAP_SIZE = 80;
+        
+
+
+                                               // CHARACTER 
+        
+        // Player
+        const PLAYER_HEIGHT = 1.7;
+        const BASE_HEAD_POS = new BABYLON.Vector3(-0.03, 0.04, -0.24);
+        const ADS_HEAD_POS = new BABYLON.Vector3(-0.10, 0.07, 0.1);
+        const CAM_GLOBAL_OFFSET = new BABYLON.Vector3(0, 0, 0.0);
+
+
+        // Movement
+        const WALK_SPEED = 0.12;
+        const SPRINT_SPEED = 0.22;
+        const JUMP_FORCE = 0.15;
+        const GRAVITY = -0.008;
+        const AIR_DRAG = 0.98;
+        const APEX_THRESHOLD = 0.02;
+        const APEX_GRAVITY_MULT = 0.5;
+
+
+                                             // WEAPONS
+
+        // Weapon Projectile                 
+        // (still needs rotation constant's added)
+        const BULLET_EMITTER_OFFSET = new BABYLON.Vector3(0, 0, 0);
+        const BULLET_EMITTER_ADS_OFFSET = new BABYLON.Vector3(0, -0.0, 0.0);
+        
+        
+        // Weapon Base Traits / Stats
+        const FIRE_RATE = 100;
+
+
+        // Weapon  Behaviors
+        const RECOIL_STRENGTH_UP = -0.01;  
+        const RECOIL_STRENGTH_BACK = -0.04;  
+        const RECOIL_STRENGTH_SIDE = 0.0;  
+        const RECOIL_RECOVERY = 0.15;
+
+
+
+                                            // MISC
+
+
+
+        // Unused Code for Later Usage Implemention
+
+        
+        // EASY INPUT KEY MAP PANEL 
+        // const KeyD = (evt.keyCode == 65)
+        
+                                                                             // were saving this one for later
+        // ADS ANIM UPPER BODY AFFECTING STRENGTH
+        // const ADS_WALK_WEIGHT = 0.2; // How much walk animation is visible during ADS
+
+        // Rotational Recoil (Kick)                                       // were saving this one for later
+        // const RECOIL_ROT_X = -0.03; // Vertical kick
+        // const RECOIL_ROT_Y = 0.01;  // Horizontal kick random scale
+        // const RECOIL_ROT_Z = 0.005; // Tilt kick
+
+        
+        
+        
+        // _________________________________________________________________________________________________________\\
+        
+        // End of Instance Editable Variables      
+
+
+        
+
+        // --- GLOBAL Variables --- there values are left to zero for change at runtime 
+        // this is similar to using a [let] instead of a [var] but i have my reasons for doing it this way.
+        var player;
+        var keys = { left: 0, right: 0, forward: 0, back: 0, shift: 0, jump: 0 };
+        var isAds = false;
+        var verticalVelocity = 0;
+        var isGrounded = true;
+
+        var jumpCount = 0;
+        var bulletCount = 0;
+        var isFiring = false;
+        var lastFireTime = 0;
+
+        var currentRecoilPos = new BABYLON.Vector3(0, 0, 0);
+        var statsText;
+        var scene;
+
+        const createScene = function () {
+            scene = new BABYLON.Scene(engine);
+            scene.useRightHandedSystem = true;
+            
+            var light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
+            light.intensity = 0.7;
+
+            // Ground
+            var mat1 = new BABYLON.StandardMaterial("mat0", scene);
+            mat1.diffuseTexture = new BABYLON.Texture("https://i.imgur.com/HADnUQr.png", scene);
+            mat1.diffuseTexture.uScale = MAP_SIZE;
+            mat1.diffuseTexture.vScale = MAP_SIZE;
+
+            var ground = BABYLON.MeshBuilder.CreateGround("ground", { height: MAP_SIZE, width: MAP_SIZE, subdivisions: 4 }, scene);
+            ground.material = mat1;
+            ground.checkCollisions = true;
+
+            // Camera Target Node
+            var head = BABYLON.MeshBuilder.CreateSphere("headAnchor", { diameter: 0.05 }, scene, true);
+            head.material = new BABYLON.StandardMaterial("headMat", scene);
+            head.material.diffuseColor = new BABYLON.Color3(1, 0, 0);
+            head.isVisible = false;
+
+            // Box targets
+            var box = BABYLON.MeshBuilder.CreateBox("targetBox", { size: 1 }, scene);
+            box.isVisible = false;
+            for (var index = 0; index < MAP_SIZE / 2; index++) {
+                var newInstance = box.createInstance('targetInstance_' + index);
+                newInstance.position = new BABYLON.Vector3(
+                    Math.floor(Math.random() * MAP_SIZE) - MAP_SIZE / 2, 0.5,
+                    Math.floor(Math.random() * MAP_SIZE) - MAP_SIZE / 2
+                );
+            }
+
+            // Player Root
+            player = new BABYLON.TransformNode("playerRoot", scene);
+            player.position = new BABYLON.Vector3(0, PLAYER_HEIGHT, 0);
+
+            // Camera setup
+            var fpsCamera = new BABYLON.UniversalCamera("FPS_Camera", new BABYLON.Vector3(0, 0, 0), scene);
+            fpsCamera.parent = player;
+            scene.activeCamera = fpsCamera;
+            fpsCamera.minZ = 0.0001;
+
+            // Setup Pointer Lock
+            var mouseMove = function (e) {
+                var deltaTime = engine.getDeltaTime();
+                var movementX = e.movementX || 0;
+                var movementY = e.movementY || 0;
+
+                if (player) {
+                    player.rotation.x += movementY * deltaTime * MOUSE_SENSITIVITY;
+                    player.rotation.y -= movementX * deltaTime * MOUSE_SENSITIVITY;
+                    player.rotation.x = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, player.rotation.x));
+                }
+            };
+
+            var changeCallback = function () {
+                if (document.pointerLockElement === canvas) {
+                    document.addEventListener("mousemove", mouseMove, false);
+                } else {
+                    document.removeEventListener("mousemove", mouseMove, false);
+                }
+            };
+            document.addEventListener('pointerlockchange', changeCallback, false);
+            canvas.onclick = () => {
+                if(!scene.debugLayer.isVisible()) {
+                    canvas.requestPointerLock();
+                }
+            };
+
+            // UI Setup
+            var advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI('HUD');
+            
+            // --- PROCEDURAL CROSSHAIR ---
+            const crosshairContainer = new BABYLON.GUI.Container("crosshair");
+            crosshairContainer.width = "20px";
+            crosshairContainer.height = "20px";
+            advancedTexture.addControl(crosshairContainer);
+
+            const vLine = new BABYLON.GUI.Rectangle();
+            vLine.width = "2px";
+            vLine.height = "100%";
+            vLine.color = "white";
+            vLine.thickness = 0;
+            vLine.background = "white";
+            crosshairContainer.addControl(vLine);
+
+            const hLine = new BABYLON.GUI.Rectangle();
+            hLine.width = "100%";
+            hLine.height = "2px";
+            hLine.color = "white";
+            hLine.thickness = 0;
+            hLine.background = "white";
+            crosshairContainer.addControl(hLine);
+
+            statsText = new BABYLON.GUI.TextBlock();
+            statsText.text = "FPS: 0\nBullets: 0\nJumps: 0";
+            statsText.color = "white";
+            statsText.fontSize = 18;
+            statsText.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+            statsText.textVerticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
+            statsText.left = "20px";
+            statsText.top = "20px";
+            advancedTexture.addControl(statsText);
+
+            var buildInfo = new BABYLON.GUI.TextBlock();
+            buildInfo.text = "Iron Will First Person WebGPU Engine with Babylon 8 and HavokSDK 5 - (Experimental Renderer).";
+            buildInfo.color = "rgba(255,255,255,0.6)";
+            buildInfo.fontSize = 14;
+            buildInfo.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
+            buildInfo.textVerticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_BOTTOM;
+            buildInfo.left = "-20px";
+            buildInfo.top = "-20px";
+            advancedTexture.addControl(buildInfo);
+
+                                                   // commented out the below until we can add this name
+                                                   // and perhaps a version to eventually to keep track of things better.
+            // custom render engine name 
+            // var engineName = new BABYLON.GUI.TextBlock();
+            // engineName.text = "Iron Will First Person WebGPU Engine with Babylon 8 and HavokSDK 5 - (Experimental Renderer).";
+            // engineName.color = "rgba(255,255,255,0.6)";
+            // engineName.fontSize = 14;
+            // engineName.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
+            // engineName.textVerticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_BOTTOM;
+            // engineName.left = "20px";
+            // engineName.top = "20px";
+            // advancedTexture.addControl(engineName);
+
+            // Input Events
+            window.addEventListener("keydown", (evt) => {
+                if (evt.keyCode == 87) keys.forward = 1;
+                if (evt.keyCode == 83) keys.back = 1;
+                if (evt.keyCode == 68) keys.left = 1;
+                if (evt.keyCode == 65) keys.right = 1;
+                if (evt.keyCode == 16) keys.shift = 1;
+                if (evt.keyCode == 32) keys.jump = 1;
+            });
+            window.addEventListener("keyup", (evt) => {
+                if (evt.keyCode == 87) keys.forward = 0;
+                if (evt.keyCode == 83) keys.back = 0;
+                if (evt.keyCode == 68) keys.left = 0;
+                if (evt.keyCode == 65) keys.right = 0;
+                if (evt.keyCode == 16) keys.shift = 0;
+                if (evt.keyCode == 32) keys.jump = 0;
+            });
+
+            BABYLON.SceneLoader.ImportMesh("", "https://dl.dropbox.com/s/wbia4zetn1bdeze/", "arms_assault_rifle_02.glb", scene, function (newMeshes) {
+                var weaponRoot = newMeshes[0];
+                weaponRoot.parent = player;
+                
+                var cameraNode = scene.getNodeByName('camera');
+                if(cameraNode) { head.parent = cameraNode; }
+
+                const idle = scene.getAnimationGroupByName("idle");
+                const walk = scene.getAnimationGroupByName("walk");
+
+                const hideList = ["knife", "assault_rifle_02_iron_sights", "bullet", "scope_01", "scope_02", "scope_03", "silencer"];
+                hideList.forEach(name => {
+                    let m = scene.getMeshByName(name) || scene.getNodeByName(name);
+                    if (m) m.setEnabled(false);
+                });
+
+                if (idle) idle.start(true);
+                var isWalking = false;
+
+                scene.onPointerDown = (evt) => {
+                    if (evt.button === 0) isFiring = true;
+                    if (evt.button === 2) isAds = true;
+                };
+                scene.onPointerUp = (evt) => {
+                    if (evt.button === 0) isFiring = false;
+                    if (evt.button === 2) isAds = false;
+                };
+
+                scene.onBeforeRenderObservable.add(() => {
+                    var deltaTime = engine.getDeltaTime();
+                    var now = Date.now();
+
+                    statsText.text = `FPS: ${Math.round(engine.getFps())}\nBullets: ${bulletCount}\nJumps: ${jumpCount}`;
+
+                    crosshairContainer.alpha = isAds ? 0.3 : 1.0;
+                    crosshairContainer.scaleX = isAds ? 0.5 : 1.0;
+                    crosshairContainer.scaleY = isAds ? 0.5 : 1.0;
+
+                    // Firing Logic
+                    if (isFiring && now - lastFireTime > FIRE_RATE) {
+                        bulletCount++;
+                        lastFireTime = now;
+                        const ray = fpsCamera.getForwardRay(100);
+                        const pickInfo = scene.pickWithRay(ray, (mesh) => mesh !== ground && mesh.isPickable);
+                        const targetPoint = pickInfo.hit ? pickInfo.pickedPoint : ray.origin.add(ray.direction.scale(100));
+                        const offset = isAds ? BULLET_EMITTER_ADS_OFFSET : BULLET_EMITTER_OFFSET;
+                        const bulletOrigin = BABYLON.Vector3.TransformCoordinates(offset, fpsCamera.getWorldMatrix());
+
+                        const tracer = BABYLON.MeshBuilder.CreateLines("tracer", {
+                            points: [bulletOrigin, bulletOrigin.add(targetPoint.subtract(bulletOrigin).normalize().scale(0.5))]
+                        }, scene);
+                        tracer.color = new BABYLON.Color3(1, 0.8, 0.2);
+                        setTimeout(() => tracer.dispose(), 50);
+
+                        currentRecoilPos.x += (Math.random() - 0.5) * RECOIL_STRENGTH_SIDE;
+                        currentRecoilPos.y += RECOIL_STRENGTH_UP;
+                        currentRecoilPos.z -= RECOIL_STRENGTH_BACK;
+                    }
+
+                    currentRecoilPos = BABYLON.Vector3.Lerp(currentRecoilPos, BABYLON.Vector3.Zero(), RECOIL_RECOVERY * (deltaTime / 16));
+
+                    // Movement Logic
+                    var currentSpeed = (keys.shift && !isAds) ? SPRINT_SPEED : WALK_SPEED;
+                    var moveVector = BABYLON.Vector3.Zero();
+                    var rotationMatrix = BABYLON.Matrix.RotationY(player.rotation.y);
+                    var forwardDir = BABYLON.Vector3.TransformCoordinates(new BABYLON.Vector3(0, 0, 1), rotationMatrix);
+                    var rightDir = BABYLON.Vector3.TransformCoordinates(new BABYLON.Vector3(1, 0, 0), rotationMatrix);
+
+                    if (keys.forward) moveVector.addInPlace(forwardDir);
+                    if (keys.back) moveVector.subtractInPlace(forwardDir);
+                    if (keys.left) moveVector.subtractInPlace(rightDir);
+                    if (keys.right) moveVector.addInPlace(rightDir);
+
+                    if (moveVector.length() > 0) {
+                        moveVector.normalize().scaleInPlace(currentSpeed);
+                        player.position.addInPlace(moveVector);
+                        if (!isWalking && walk) {
+                            idle?.stop();
+                            walk.start(true);
+                            isWalking = true;
+                        }
+                    } else if (isWalking) {
+                        walk?.stop();
+                        idle?.start(true);
+                        isWalking = false;
+                    }
+
+                    // Jump Physics
+                    if (isGrounded) {
+                        if (keys.jump) {
+                            verticalVelocity = JUMP_FORCE;
+                            isGrounded = false;
+                            jumpCount++;
+                        }
+                    } else {
+                        let g = (Math.abs(verticalVelocity) < APEX_THRESHOLD) ? GRAVITY * APEX_GRAVITY_MULT : GRAVITY;
+                        verticalVelocity += g;
+                        if (verticalVelocity < 0) verticalVelocity *= AIR_DRAG;
+                        player.position.y += verticalVelocity;
+
+                        if (player.position.y <= PLAYER_HEIGHT) {
+                            player.position.y = PLAYER_HEIGHT;
+                            verticalVelocity = 0;
+                            isGrounded = true;
+                        }
+                    }
+
+                    // View Positioning
+                    if (cameraNode) {
+                        let modePos = isAds ? ADS_HEAD_POS : BASE_HEAD_POS;
+                        let targetPos = modePos.add(currentRecoilPos).add(CAM_GLOBAL_OFFSET);
+                        head.position = BABYLON.Vector3.Lerp(head.position, targetPos, 0.2 * (deltaTime / 16));
+                        fpsCamera.position.copyFrom(head.position);
+                    }
+                });
+            });
+
+            // UI Button Handlers
+            document.getElementById("inspector-btn").onclick = () => {
+                if (scene.debugLayer.isVisible()) scene.debugLayer.hide();
+                else scene.debugLayer.show({ embedMode: true });
+            };
+            document.getElementById("stats-btn").onclick = () => {
+                if (statsText) statsText.isVisible = !statsText.isVisible;
+            };
+
+            return scene;
+        };
+
+        const sceneInstance = createScene();
+        engine.runRenderLoop(() => {
+            if (sceneInstance) sceneInstance.render();
+        });
+        window.addEventListener("resize", () => engine.resize());
+    </script>
+</body>
+</html>
