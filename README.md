@@ -24,11 +24,9 @@
 
 ---
 
-**Basalt** is the modern web engine — high-fidelity WebGPU+Havok, Hammer-style workflow, Built for developers who want desktop-class rendering in the browser without the bloat.
+**Basalt** is the definitive modern web engine—delivering high-fidelity **WebGPU + Havok** physics with a legendary **Hammer-style workflow**. It’s engineered for developers demanding desktop-class rendering in the browser without the legacy bloat.
 
-The **IronWill Pipeline** Aims to Make The Path Between Blender and Game Engines Super Easy to Cross With little to No Bloat and Very Little if Any Overhead.
-Its Ultimate Goal is to bring The Power and Main Modern Features From Other Game Engines into Its Editor Tools making the Best Of All Worlds Engine that Utilizes Ideas From Other Existing Engine Systems And Modern Ideas then Implements and Builds Upon them Sufficiently.
-
+The **IronWill Pipeline** shatters the barrier between Blender and the browser, creating a frictionless path with zero overhead. Our ultimate goal? To harvest the most powerful features from industry-leading engines, refine them, and evolve them into a superior, web-native ecosystem. We aren't just matching the best tools in the world—we’re building upon them.
 ---
 ## Why Basalt? Why Not Babylon Editor?
 
