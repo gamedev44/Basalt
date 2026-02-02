@@ -362,4 +362,4 @@ MULTIPLAYER_REFERENCE (networking) → movement replication
 
 ---
 
-*Basalt Engine Context — IronWill Interactive — Last updated: 2026-01-30*
+*Basalt Engine Context — IronWill Interactive — Last updated: February 02, 2026*
