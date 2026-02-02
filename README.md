@@ -29,22 +29,49 @@
 The **IronWill Pipeline** transforms Blender into a professional-grade map editor, entity manager, and logic sequencer — one workflow, no fragmented tools.
 
 ---
-
 ## Why Basalt? Why Not Babylon Editor?
 
-We use **Babylon.js** for rendering and physics — it's excellent. But we built **Basalt** as our own editor instead of using the Babylon Editor. Here's why:
+While we utilize **Babylon.js** for its world-class rendering and physics, **Basalt** was engineered as a specialized editor to bridge the gap between web tech and AAA game development workflows.
 
-| Our Path | Why |
-|----------|-----|
-| **Blender-centric** | Model, entity-tag, and bake in one tool. No switching between editors. Basalt Lives To Compliment The Blender Workflow Making it Easier to Make Games Using Blender as your Creative Tool. |
-| **Hammer feel** | UE5-style dock layout, PIE (Play in Editor), familiar workflow for Source/Valve and unreal engine 5.5 devs. |
-| **Zero build step** | Static HTML/JS. Run anywhere — GitHub Pages, local, no npm install. |
-| **Full control** | We own the editor UX. Tailor panels, variables, weapon tables to game dev, not generic 3D. |
-| **Web-first** | Runs in browser. No desktop install. Share a link, and it works. |
-| **Mesh-based** | No BSP brushes. Modern glTF pipeline. Sculpt in Blender, export, play. |
-| **Native path** | Basalt Native fork test (coming soon Feb 10th) — same engine, desktop build. Babylon Editor is a separate product. |
+### Feature Comparison
 
-**Babylon Editor** is a great general-purpose editor. Basalt is **AAA game-engine focused around Blender Heavy Worflows and Pipelines** — FPS templates, weapon systems, IronWill schema, Blender integration. Different goals, different tools.
+| Feature | Basalt Editor | Babylon Editor |
+| :--- | :--- | :--- |
+| **UI Architecture** | **Modular Dockview System.** UE5 Slate-inspired layout. Fully customizable, dockable panels for a professional engine feel. | Fixed/Standard web layout. Less flexibility for complex multi-monitor game dev setups. |
+| **Build Pipeline** | **Zero Rebuilds.** Add features, scripts, or UI elements with instant hot-reloading. **No compilation wait times.** | Often requires a full rebuild/compile cycle when extending the editor or adding core features. |
+| **Workflow** | **Blender-Centric.** Designed to complement Blender. Model, entity-tag, and bake in one tool without context switching. | General-purpose. Requires more manual importing/exporting and scene setup. |
+| **Templates & Logic** | **Ready-to-Play.** Built-in Advanced FPS templates (COD-style crosshairs, weapon switching, dynamic UI), and GPU/CPU shader examples (Water, etc). | Basic scene starters only. No complex, out-of-the-box game logic templates. |
+| **Interface Tools** | **Deep Engine Interfacing.** Custom "Thermo-Meters" for optimization, weapon Data-tables, and Enumeration Systems. | Generic 3D tools. Lacks specialized game-logic interfaces like our recoil tables and FPS systems. |
+| **Documentation** | **Condensed & Direct.** Layman-friendly docs that get straight to the point. No sifting through fluff. | Extensive but often overwhelming. Requires significant "sifting" to find practical game-dev answers. |
+| **UX Heritage** | **"Hammer" & UE5 Feel.** Familiar workflow for Valve/Source and Unreal devs. Includes native PIE (Play In Editor). | Standard 3D software UX. Focused on general scene composition rather than "Game Feel." |
+| **Deployment** | **Static & Native.** Runs as static HTML/JS anywhere (GitHub Pages) + upcoming Native desktop fork. | Primarily a desktop-focused application for local development. |
+
+---
+
+### Key Technical Advantages
+
+#### 🏗️ Modular "Slate-Style" UI
+By utilizing **Dockview**, Basalt mirrors the high-end modularity of **Unreal Engine 5’s Slate system**. This allows developers to tear off, pin, and stack panels according to their specific task—whether that is weapon tuning, level lighting, or performance profiling. It’s a modern engine layout for modern devs.
+
+#### ⚡ No-Compile Development (Zero Build Step)
+One of the biggest bottlenecks in engine development is the "Wait for Build" screen. Basalt eliminates this. You can add features, tweak UI, or update scripts and see the changes **instantly**. While other editors force you to rebuild the entire project to see a new tool in action, Basalt stays lightweight and live.
+
+#### 📦 Already Built-in Templates & even a planned Shader Example and Game Systems Example's Library
+Stop starting from scratch. Basalt includes a growing library of production-ready assets:
+* **Advanced FPS Template:** Features weapon switching, dynamic UI systems, and Call of Duty style crosshairs.
+* **Shader Examples:** Instant-import GPU-accelerated water, custom CPU shaders, and high-end visual effects.
+* **Starter Scenes:** From "Empty Basic" to full blockout environments planned soon to come!.
+
+#### 🔗 Deep Engine Interfacing
+Basalt isn't just a scene viewer; it’s a direct window into your game's soul. It is built specifically to talk to our custom logic:
+* **Real-time Optimization:** Visual "Thermo-Meters" for instant feedback on draw calls and mesh density.
+* **Entity Schema:** Directly edit **IronWill** data structures and weapon recoil tables within the UI.
+* **Blender Pipeline:** Basalt acts as the interactive bridge that makes Blender a real-time game creation tool.
+
+#### 📖 Documentation for Humans
+We hate sifting through 100-page manuals as much as you do. Our documentation is **condensed and layman-friendly**. We focus on the points that actually matter to get your game running, skipping the fluff so you can spend more time creating and less time reading.
+
+> **The Verdict:** Basalt is a **AAA game-engine environment** focused on high-performance workflows (FPS templates, complex schemas, and Blender-heavy pipelines). There is so much more packed under the hood that we can't even list it all here—it simply must be experienced.
 
 ---
 
