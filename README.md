@@ -36,19 +36,19 @@ We use **Babylon.js** for rendering and physics — it's excellent. But we built
 
 | Our Path | Why |
 |----------|-----|
-| **Blender-centric** | Model, entity-tag, and bake in one tool. No switching between editors. IronWill lives inside Blender. |
-| **Hammer feel** | UE5-style dock layout, PIE (Play in Editor), familiar workflow for Source/Valve devs. |
+| **Blender-centric** | Model, entity-tag, and bake in one tool. No switching between editors. Basalt Lives To Compliment The Blender Workflow Making it Easier to Make Games Using Blender as your Creative Tool. |
+| **Hammer feel** | UE5-style dock layout, PIE (Play in Editor), familiar workflow for Source/Valve and unreal engine 5.5 devs. |
 | **Zero build step** | Static HTML/JS. Run anywhere — GitHub Pages, local, no npm install. |
 | **Full control** | We own the editor UX. Tailor panels, variables, weapon tables to game dev, not generic 3D. |
-| **Web-first** | Runs in browser. No desktop install. Share a link, it works. |
+| **Web-first** | Runs in browser. No desktop install. Share a link, and it works. |
 | **Mesh-based** | No BSP brushes. Modern glTF pipeline. Sculpt in Blender, export, play. |
-| **Native path** | Babylon Native fork test (Feb 6–8) — same engine, desktop build. Babylon Editor is a separate product. |
+| **Native path** | Babylon Native fork test (coming soon Feb 10th) — same engine, desktop build. Babylon Editor is a separate product. |
 
-**Babylon Editor** is a great general-purpose editor. Basalt is **game-engine focused** — FPS templates, weapon systems, IronWill schema, Blender integration. Different goals, different tools.
+**Babylon Editor** is a great general-purpose editor. Basalt is **AAA game-engine focused around Blender Heavy Worflows and Pipelines** — FPS templates, weapon systems, IronWill schema, Blender integration. Different goals, different tools.
 
 ---
 
-## 🎮 Try it (Early) Now
+## 🎮 Try it (Early) Now (not yet finished) (WIP)
 Experience the engine directly in your browser while as it Evolves and is being Developed into a full fledge engine with editor by IronWill:
 
 # [Basalt Engine : Live Web Test](https://gamedev44.github.io/Basalt/)
@@ -117,7 +117,7 @@ Basalt is composed of several specialized modules that handle everything from ph
 | Component | Name | Technology | Description |
 | :--- | :--- | :--- | :--- |
 | **Core Runtime** | Basalt | Babylon.js | The engine loop, renderer, and state manager. |
-| **Pipeline** | Iron | Python/JS | The automated export, bake, and sync bridge. |
+| **Pipeline** | Iron | Python/JS | The automated export, bake, and sync bridge. | (Coming Soon.)
 | **Physics** | Havok | Havok WASM | Real-time rigid body dynamics and ragdolls. |
 | **Materials** | Substrate | PBR / Node | Custom shader system for realistic surfaces. |
 | **Audio** | Sonar | Web Audio API | Spatial 3D audio and acoustic simulation. |
