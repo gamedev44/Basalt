@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Basalt — Project Browser</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
+  <style>
+    :root {
+      --bg: #0d1117;
+      --panel: #161b22;
+      --border: #30363d;
+      --text: #c9d1d9;
+      --muted: #8b949e;
+      --accent: #388bfd;
+      --accent-hover: #58a6ff;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .pb-header {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .pb-title { font-size: 18px; font-weight: 600; }
+    .pb-body {
+      flex: 1;
+      display: flex;
+      min-height: 0;
+    }
+    .pb-sidebar {
+      width: 220px;
+      border-right: 1px solid var(--border);
+      padding: 12px;
+    }
+    .pb-sidebar-title {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .pb-sidebar-item {
+      padding: 10px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 2px;
+      font-size: 13px;
+    }
+    .pb-sidebar-item:hover { background: rgba(255,255,255,0.06); }
+    .pb-sidebar-item.active { background: rgba(56,139,253,0.2); color: var(--accent); }
+    .pb-sidebar-item .material-symbols-outlined { font-size: 20px; opacity: 0.9; }
+    .pb-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+      overflow: auto;
+    }
+    .pb-search {
+      width: 100%;
+      max-width: 320px;
+      padding: 8px 12px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text);
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+    .pb-search:focus { outline: none; border-color: var(--accent); }
+    .pb-search::placeholder { color: var(--muted); }
+    .pb-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 16px;
+    }
+    .pb-card {
+      background: var(--panel);
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      min-height: 140px;
+    }
+    .pb-card:hover { border-color: var(--accent); background: rgba(56,139,253,0.08); }
+    .pb-card.selected { border-color: var(--accent); background: rgba(56,139,253,0.15); }
+    .pb-card-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.05);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+    }
+    .pb-card-icon .material-symbols-outlined { font-size: 28px; opacity: 0.9; }
+    .pb-card-name { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+    .pb-card-desc { font-size: 11px; color: var(--muted); line-height: 1.3; }
+    .pb-footer {
+      padding: 16px 24px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .pb-footer label { font-size: 12px; color: var(--muted); }
+    .pb-footer input {
+      padding: 6px 10px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text);
+      font-size: 12px;
+      min-width: 200px;
+    }
+    .pb-btn {
+      padding: 8px 16px;
+      background: var(--accent);
+      border: none;
+      border-radius: 4px;
+      color: white;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .pb-btn:hover { background: var(--accent-hover); }
+    .pb-btn.secondary {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .pb-btn.secondary:hover { background: rgba(255,255,255,0.06); }
+  </style>
+</head>
+<body>
+  <div class="pb-header">
+    <span class="pb-title">Basalt Project Browser</span>
+  </div>
+  <div class="pb-body">
+    <div class="pb-sidebar">
+      <div class="pb-sidebar-title">Templates</div>
+      <div class="pb-sidebar-item active" data-template="fps">
+        <span class="material-symbols-outlined">sports_esports</span>
+        Advanced FPS
+      </div>
+      <div class="pb-sidebar-item" data-template="empty">
+        <span class="material-symbols-outlined">inventory_2</span>
+        Empty Base
+      </div>
+      <div class="pb-sidebar-title" style="margin-top:24px;">Recent</div>
+      <div id="pb-recent" class="pb-recent"></div>
+    </div>
+    <style>
+      .pb-recent-item {
+        padding: 8px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 2px;
+        font-size: 12px;
+      }
+      .pb-recent-item:hover { background: rgba(255,255,255,0.06); }
+      .pb-recent-item .material-symbols-outlined { font-size: 18px; opacity: 0.8; }
+      .pb-recent-empty { font-size: 11px; color: var(--muted); padding: 8px 0; }
+    </style>
+    <div class="pb-main">
+      <input type="text" class="pb-search" id="pb-search" placeholder="Filter templates..." />
+      <div class="pb-grid" id="pb-grid"></div>
+    </div>
+  </div>
+  <div class="pb-footer">
+    <label>Project Name</label>
+    <input type="text" id="pb-project-name" placeholder="MyProject" value="MyProject" />
+    <label>Template</label>
+    <input type="text" id="pb-template-display" readonly value="Advanced FPS" style="min-width:140px;" />
+    <button class="pb-btn" id="pb-open">Open</button>
+    <button class="pb-btn secondary" id="pb-cancel">Cancel</button>
+  </div>
+  <script>
+    const TEMPLATES = [
+      { id: 'fps', name: 'Advanced FPS', desc: 'First-person shooter with weapon, movement, ADS, terrain', icon: 'sports_esports' },
+      { id: 'empty', name: 'Empty Base', desc: 'Z-up coordinate system, FreeCamera, ground on XY, sphere', icon: 'inventory_2' },
+    ];
+    const STORAGE_KEY = 'basalt_config';
+    const RECENT_KEY = 'basalt_recent_projects';
+    const EDITOR_URL = 'Editor_Layout.html';
+
+    let selectedTemplate = 'fps';
+    const grid = document.getElementById('pb-grid');
+    const templateDisplay = document.getElementById('pb-template-display');
+    const projectNameInput = document.getElementById('pb-project-name');
+    const searchInput = document.getElementById('pb-search');
+
+    function saveConfig(templateId, projectName) {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        const config = stored ? JSON.parse(stored) : {};
+        config.SCENE_TEMPLATE = templateId;
+        if (projectName) config.PROJECT_NAME = projectName;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+      } catch (e) { console.warn('Save config:', e); }
+    }
+
+    function addRecent(name, templateId) {
+      try {
+        const raw = localStorage.getItem(RECENT_KEY);
+        const list = raw ? JSON.parse(raw) : [];
+        const entry = { name, templateId, ts: Date.now() };
+        const filtered = list.filter((e) => !(e.name === name && e.templateId === templateId));
+        filtered.unshift(entry);
+        localStorage.setItem(RECENT_KEY, JSON.stringify(filtered.slice(0, 10)));
+      } catch (e) {}
+    }
+
+    function renderGrid(filter = '') {
+      const q = filter.toLowerCase();
+      const filtered = TEMPLATES.filter((t) => !q || t.name.toLowerCase().includes(q) || t.desc.toLowerCase().includes(q));
+      grid.innerHTML = filtered.map((t) => `
+        <div class="pb-card ${selectedTemplate === t.id ? 'selected' : ''}" data-template="${t.id}">
+          <div class="pb-card-icon"><span class="material-symbols-outlined">${t.icon}</span></div>
+          <div class="pb-card-name">${t.name}</div>
+          <div class="pb-card-desc">${t.desc}</div>
+        </div>
+      `).join('');
+      grid.querySelectorAll('.pb-card').forEach((card) => {
+        card.onclick = () => {
+          selectedTemplate = card.dataset.template;
+          const t = TEMPLATES.find((x) => x.id === selectedTemplate);
+          if (t) templateDisplay.value = t.name;
+          renderGrid(searchInput.value);
+          document.querySelectorAll('.pb-sidebar-item').forEach((el) => {
+            el.classList.toggle('active', el.dataset.template === selectedTemplate);
+          });
+        };
+      });
+    }
+
+    function renderSidebar() {
+      document.querySelectorAll('.pb-sidebar-item[data-template]').forEach((el) => {
+        el.onclick = () => {
+          selectedTemplate = el.dataset.template;
+          const t = TEMPLATES.find((x) => x.id === selectedTemplate);
+          if (t) templateDisplay.value = t.name;
+          renderGrid(searchInput.value);
+          document.querySelectorAll('.pb-sidebar-item[data-template]').forEach((e) => e.classList.toggle('active', e.dataset.template === selectedTemplate));
+        };
+      });
+    }
+
+    document.getElementById('pb-open').onclick = () => {
+      const name = projectNameInput.value.trim() || 'MyProject';
+      saveConfig(selectedTemplate, name);
+      addRecent(name, selectedTemplate);
+      const editorUrl = new URL(EDITOR_URL, window.location.href).href;
+      window.location.href = editorUrl;
+    };
+
+    document.getElementById('pb-cancel').onclick = () => {
+      window.location.href = 'Live_Web_Viewport_W_Inspector.html';
+    };
+
+    function renderRecent() {
+      const el = document.getElementById('pb-recent');
+      if (!el) return;
+      try {
+        const raw = localStorage.getItem(RECENT_KEY);
+        const list = raw ? JSON.parse(raw) : [];
+        if (!list.length) {
+          el.innerHTML = '<div class="pb-recent-empty">No recent projects</div>';
+          return;
+        }
+        el.innerHTML = list.map((e) => `
+          <div class="pb-recent-item" data-name="${escapeHtml(e.name)}" data-template="${escapeHtml(e.templateId || 'fps')}">
+            <span class="material-symbols-outlined">folder</span>
+            <span>${escapeHtml(e.name)}</span>
+          </div>
+        `).join('');
+        el.querySelectorAll('.pb-recent-item').forEach((item) => {
+          item.onclick = () => {
+            const name = item.dataset.name;
+            const templateId = item.dataset.template || 'fps';
+            projectNameInput.value = name;
+            selectedTemplate = templateId;
+            const t = TEMPLATES.find((x) => x.id === selectedTemplate);
+            if (t) templateDisplay.value = t.name;
+            renderGrid(searchInput.value);
+            document.querySelectorAll('.pb-sidebar-item').forEach((e) => e.classList.toggle('active', e.dataset.template === selectedTemplate));
+          };
+        });
+      } catch (e) { el.innerHTML = '<div class="pb-recent-empty">No recent projects</div>'; }
+    }
+    function escapeHtml(s) {
+      if (s == null) return '';
+      return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    searchInput.oninput = () => renderGrid(searchInput.value);
+    renderGrid();
+    renderSidebar();
+    renderRecent();
+  </script>
+</body>
+</html>

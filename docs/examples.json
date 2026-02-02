@@ -1,0 +1,191 @@
+{
+  "version": "1.0",
+  "description": "Curated Babylon.js examples and docs for Basalt Editor — load into panels for live editing",
+  "categories": [
+    "Pipeline",
+    "Gameplay",
+    "Physics",
+    "Animation",
+    "Materials",
+    "Geometry",
+    "Audio",
+    "Cameras",
+    "Behaviors",
+    "World",
+    "Editor"
+  ],
+  "examples": [
+    {
+      "id": "blender-export",
+      "name": "Blender Exporter",
+      "category": "Pipeline",
+      "url": "https://doc.babylonjs.com/features/featuresDeepDive/Exporters/Blender/",
+      "type": "doc",
+      "description": "Blender to Babylon.js export pipeline"
+    },
+    {
+      "id": "blender-tips",
+      "name": "Blender Tips",
+      "category": "Pipeline",
+      "url": "https://doc.babylonjs.com/features/featuresDeepDive/Exporters/Blender_Tips/",
+      "type": "doc",
+      "description": "Best practices for Blender export"
+    },
+    {
+      "id": "blender-gltf",
+      "name": "Blender to glTF",
+      "category": "Pipeline",
+      "url": "https://doc.babylonjs.com/features/featuresDeepDive/Exporters/Blender_to_glTF/",
+      "type": "doc",
+      "description": "glTF export workflow"
+    },
+    {
+      "id": "save-babylon",
+      "name": "Save Babylon",
+      "category": "Pipeline",
+      "url": "https://doc.babylonjs.com/features/featuresDeepDive/Exporters/Save_Babylon/",
+      "type": "doc",
+      "description": ".babylon format export"
+    },
+    {
+      "id": "mixamo-babylon",
+      "name": "Mixamo to Babylon",
+      "category": "Pipeline",
+      "url": "https://doc.babylonjs.com/features/featuresDeepDive/Exporters/Mixamo_to_Babylon/",
+      "type": "doc",
+      "description": "Character animation from Mixamo"
+    },
+    {
+      "id": "playground-fps",
+      "name": "FPS Controller",
+      "category": "Gameplay",
+      "url": "https://playground.babylonjs.com/#BCU1XR#0",
+      "type": "playground",
+      "description": "First-person gameplay example"
+    },
+    {
+      "id": "playground-physics",
+      "name": "Physics Demo",
+      "category": "Physics",
+      "url": "https://playground.babylonjs.com/#L92PHY#217",
+      "type": "playground",
+      "description": "Havok/physics demo"
+    },
+    {
+      "id": "havok-plugin",
+      "name": "Havok Plugin",
+      "category": "Physics",
+      "url": "https://doc.babylonjs.com/features/featuresDeepDive/physics/havokPlugin#full-in-browser-example-using-the-umd-version",
+      "type": "doc",
+      "description": "WebAssembly Havok physics, MIT license, UMD/ES CDN; requires WebAssembly SIMD (iOS < 16.4 unsupported)"
+    },
+    {
+      "id": "animated-character",
+      "name": "Animated Character",
+      "category": "Animation",
+      "url": "https://doc.babylonjs.com/features/featuresDeepDive/animation/animatedCharacter",
+      "type": "doc",
+      "description": "Character animation deep dive"
+    },
+    {
+      "id": "mixamo-trigger-anim",
+      "name": "Mixamo Trigger Animation",
+      "category": "Animation",
+      "url": null,
+      "type": "snippet",
+      "description": "Trigger anims by name; blending; weighted blend (walk+strafe); syncWith; Babylon.GUI buttons",
+      "notes": "See docs/animation/MIXAMO_TRIGGER_REFERENCE.md"
+    },
+    {
+      "id": "legacy-audio",
+      "name": "Legacy Audio",
+      "category": "Audio",
+      "url": "https://doc.babylonjs.com/legacy/audio",
+      "type": "doc",
+      "description": "Web Audio API integration"
+    },
+    {
+      "id": "sonar-multi-violin",
+      "name": "Multi-Violin Sync",
+      "category": "Audio",
+      "url": "https://playground.babylonjs.com/#PCY1J#6",
+      "type": "playground",
+      "description": "3 violins playing different parts in synchronous song"
+    },
+    {
+      "id": "mesh-behaviors",
+      "name": "Mesh Behaviors",
+      "category": "Behaviors",
+      "url": "https://doc.babylonjs.com/features/featuresDeepDive/behaviors/meshBehaviors",
+      "type": "doc",
+      "description": "Behaviors system"
+    },
+    {
+      "id": "pointer-drag-rail",
+      "name": "PointerDragBehavior Rail Constraint",
+      "category": "Behaviors",
+      "url": null,
+      "type": "snippet",
+      "description": "Draggable object constrained to 1 axis (rail); dragAxis: Vector3(1,0,0) for X-only",
+      "notes": "See docs/behaviors/POINTER_DRAG_REFERENCE.md"
+    },
+    {
+      "id": "camera-intro",
+      "name": "Camera Introduction",
+      "category": "Cameras",
+      "url": "https://doc.babylonjs.com/features/featuresDeepDive/cameras/camera_introduction",
+      "type": "doc",
+      "description": "Camera types and usage"
+    },
+    {
+      "id": "dynamic-texture",
+      "name": "Dynamic Texture",
+      "category": "Materials",
+      "url": "https://doc.babylonjs.com/features/featuresDeepDive/materials/using/dynamicTexture",
+      "type": "doc",
+      "description": "Runtime texture generation"
+    },
+    {
+      "id": "nme",
+      "name": "Node Material Editor",
+      "category": "Materials",
+      "url": "https://nme.babylonjs.com",
+      "type": "nme",
+      "description": "Substrate — visual shader authoring"
+    },
+    {
+      "id": "nge",
+      "name": "Node Geometry Editor",
+      "category": "Geometry",
+      "url": "https://nge.babylonjs.com",
+      "type": "nge",
+      "description": "Procedural geometry / geometry nodes — Blender-style in-browser"
+    },
+    {
+      "id": "decals",
+      "name": "Mesh Decals",
+      "category": "Materials",
+      "url": "https://doc.babylonjs.com/features/featuresDeepDive/mesh/decals",
+      "type": "doc",
+      "description": "Decal projection onto meshes"
+    },
+    {
+      "id": "collab-editor",
+      "name": "Collab Pointer Overlay",
+      "category": "Editor",
+      "url": null,
+      "type": "component",
+      "description": "Firebase real-time pointer presence, chat, DMs, video mode; Shift+Right-click menu",
+      "notes": "See docs/collab/COLLAB_EDITOR_REFERENCE.md"
+    },
+    {
+      "id": "mantle-terrain",
+      "name": "Mantle Terrain Generator",
+      "category": "World",
+      "url": "https://playground.babylonjs.com/?webgpu#C90R62#21",
+      "type": "playground",
+      "description": "Procedural terrain with simplex noise, hydraulic erosion (CPU/GPU), NME material, WebGPU compute shaders",
+      "notes": "TerrainGenerator + HeightMapGenerator classes; erosion params; NME snippet 4W2QH3#4; dat.GUI; mulberry32 PRNG"
+    }
+  ]
+}

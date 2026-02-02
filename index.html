@@ -226,7 +226,7 @@
 
     <script>
         const LOAD_TIME_SECONDS = 15;
-        const REDIRECT_URL = "https://gamedev44.github.io/Basalt/Engine/Modules/Rendering/Live_Web_Viewport_W_Inspector.html";
+        const REDIRECT_URL = "Engine/Modules/Rendering/Project_Browser.html";
         
         const MASTER_TIPS = [
             "BLENDER: [Tab] toggles between Object and Edit mode instantly.",
@@ -262,13 +262,12 @@
         }
 
         function startLoading() {
-            // PREVENTION: Check if we just came from a redirect to avoid loops
+            // If we've been here before (e.g. user hit back), skip splash and go straight to editor
             if (sessionStorage.getItem('basalt_redirected') === 'true') {
-                console.log("Redirect loop detected. Stopping auto-redirect.");
-                statusText.innerText = "ENVIRONMENT READY // STANDBY";
+                statusText.innerText = "LOADING EDITOR...";
                 progressBar.style.width = "100%";
-                showNextTip();
-                return; 
+                window.location.href = "Engine/Modules/Rendering/Editor_Layout.html";
+                return;
             }
 
             let startTime = Date.now();

@@ -1,0 +1,74 @@
+{
+  "themes": [
+    { "id": "dark", "name": "Dark", "dockviewTheme": "themeDark", "overrides": {} },
+    { "id": "light", "name": "Light", "dockviewTheme": "themeLight", "overrides": {} },
+    { "id": "visualStudio", "name": "Visual Studio", "dockviewTheme": "themeVisualStudio", "overrides": {} },
+    { "id": "abyss", "name": "Abyss", "dockviewTheme": "themeAbyss", "overrides": {} },
+    { "id": "dracula", "name": "Dracula", "dockviewTheme": "themeDracula", "overrides": {} },
+    { "id": "replit", "name": "Replit", "dockviewTheme": "themeReplit", "overrides": {} },
+    { "id": "lightSpaced", "name": "Light Spaced", "dockviewTheme": "themeLightSpaced", "overrides": {} },
+    { "id": "abyssSpaced", "name": "Abyss Spaced", "dockviewTheme": "themeAbyssSpaced", "overrides": {} }
+  ],
+  "layoutPresets": {
+    "ue5": {
+      "name": "Unreal Engine 5",
+      "panelNames": {
+        "viewport": "Viewport",
+        "placeActors": "Place Actors",
+        "levelOutliner": "World Outliner",
+        "contentBrowser": "Content Browser",
+        "contentDrawer": "Blueprint Graph",
+        "blueprint": "MC logic graph FOR Micro chip",
+        "inspectorPanel": "Details",
+        "thermometers": "Thermometers"
+      }
+    },
+    "godot": {
+      "name": "Godot",
+      "overrides": {
+        "--basalt-panel-bg": "#2d373b",
+        "--basalt-bg": "#1e2226",
+        "--basalt-text": "#e0e0e0",
+        "--basalt-text-muted": "#9ca3af",
+        "--basalt-border": "#3d4549",
+        "--basalt-accent": "#e28625",
+        "--basalt-accent-hover": "#f0a040"
+      },
+      "panelNames": {
+        "viewport": "3D Viewport",
+        "placeActors": "Scene",
+        "levelOutliner": "Scene Tree",
+        "contentBrowser": "FileSystem",
+        "contentDrawer": "Blueprint Graph",
+        "blueprint": "Inspector",
+        "inspectorPanel": "Inspector",
+        "thermometers": "Debugger"
+      }
+    },
+    "unity": {
+      "name": "Unity",
+      "overrides": {
+        "--basalt-panel-bg": "#2d2d30",
+        "--basalt-bg": "#1e1e1e",
+        "--basalt-text": "#d4d4d4",
+        "--basalt-text-muted": "#9d9d9d",
+        "--basalt-border": "#3e3e42",
+        "--basalt-accent": "#007acc",
+        "--basalt-accent-hover": "#1a8ad4"
+      },
+      "panelNames": {
+        "viewport": "Scene",
+        "placeActors": "Hierarchy",
+        "levelOutliner": "Hierarchy",
+        "contentBrowser": "Project",
+        "contentDrawer": "Blueprint Graph",
+        "blueprint": "MC logic graph FOR Micro chip",
+        "inspectorPanel": "Details",
+        "thermometers": "Console"
+      }
+    }
+  },
+  "custom": [
+    { "id": "custom-dark", "name": "Custom Dark", "dockviewTheme": "themeDark", "overrides": { "--basalt-panel-bg": "#1a1a1a", "--basalt-text": "#c9d1d9", "--basalt-border": "#30363d" } }
+  ]
+}

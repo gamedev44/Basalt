@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Basalt Viewport — Standalone</title>
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+    <script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
+    <script src="https://cdn.babylonjs.com/inspector/babylon.inspector.bundle.js"></script>
+    <style>
+        html, body { overflow: hidden; width: 100%; height: 100%; margin: 0; padding: 0; background: #000; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        #renderCanvas { width: 100%; height: 100%; touch-action: none; outline: none; }
+        #ui-overlay {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 100;
+        }
+        .ui-btn {
+            background: rgba(45, 45, 45, 0.8);
+            color: white;
+            border: 1px solid #555;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 12px;
+            border-radius: 4px;
+            text-align: center;
+            transition: background 0.2s;
+            user-select: none;
+        }
+        .ui-btn:hover { background: rgba(80, 80, 80, 0.9); }
+    </style>
+</head>
+<body>
+    <div id="ui-overlay">
+        <a href="Editor_Layout.html" class="ui-btn" title="Back to Editor">Editor</a>
+        <div class="ui-btn" id="inspector-btn">Toggle Inspector</div>
+        <div class="ui-btn" id="stats-btn">Toggle Stats</div>
+    </div>
+    <canvas id="renderCanvas"></canvas>
+    <script type="module" src="../bootstrap.js"></script>
+</body>
+</html>

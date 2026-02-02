@@ -1,0 +1,1449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MC logic graph FOR Micro chip</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;600&display=swap');
+
+        :root {
+            --bg-grid: #0a0a0a;
+            --grid-color: rgba(255, 255, 255, 0.03);
+            --node-bg: rgba(30, 30, 30, 0.95);
+            --node-border: rgba(255, 255, 255, 0.15);
+            --accent: #d946ef;
+            --wire-color: #fbbf24;
+            --glass-blur: blur(8px);
+            --event-header: #8B1A1A;
+            --event-bg: #2a2a2a;
+            --branch-header: #4a0e0e;
+            --branch-bg: #252525;
+            --logic-header: #0f4c75;
+            --logic-bg: #252525;
+            --exec-header: #1a4d2e;
+            --exec-bg: #252525;
+            --microchip-header: #4a148c;
+            --microchip-bg: #252525;
+        }
+
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: var(--bg-grid); font-family: 'Roboto Mono', monospace; color: #e4e4e7; }
+
+        #viewport { width: 100vw; height: 100vh; overflow: hidden; }
+
+        #canvas-container {
+            width: 10000px; height: 10000px;
+            background-image: linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 50px 50px;
+            position: absolute; top: 0; left: 0;
+            transform-origin: 0 0;
+            will-change: transform;
+        }
+
+        .node {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            background: var(--node-bg);
+            border: 2px solid var(--node-border);
+            border-radius: 4px;
+            min-width: 180px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+            z-index: 10;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            user-select: none;
+        }
+        .node .node-header, .node .node-content, .node .microchip-preview, .node .node-resize-handle { flex-shrink: 0; }
+
+        .node.selected { border-color: #ffa726; box-shadow: 0 0 0 2px #ffa726, 0 8px 32px rgba(0,0,0,0.8); z-index: 20; }
+
+        .node-header { padding: 6px 10px; border-radius: 2px 2px 0 0; font-weight: 600; font-size: 0.7rem; cursor: grab; display: flex; align-items: center; justify-content: space-between; color: #fff; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .node[data-type="event"] { background: var(--event-bg); }
+        .node[data-type="event"] .node-header { background: var(--event-header); }
+        .node[data-type="branch"] { background: var(--branch-bg); }
+        .node[data-type="branch"] .node-header { background: var(--branch-header); }
+        .node[data-type="logic"] { background: var(--logic-bg); }
+        .node[data-type="logic"] .node-header { background: var(--logic-header); }
+        .node[data-type="exec"] { background: var(--exec-bg); }
+        .node[data-type="exec"] .node-header { background: var(--exec-header); }
+        .node[data-type="microchip"] { background: var(--microchip-bg); }
+        .node[data-type="microchip"] .node-header { background: var(--microchip-header); }
+        .node[data-type="blueprint"] { background: #1a2a1a; }
+        .node[data-type="blueprint"] .node-header { background: #0d4d2e; }
+        .node[data-type="blueprint_ref"] { background: #0a1a1a; }
+        .node[data-type="blueprint_ref"] .node-header { background: #0d3d4e; }
+        .microchip-preview { width: 100%; height: 48px; background: rgba(0,0,0,0.3); border-radius: 2px; margin-top: 4px; overflow: hidden; position: relative; }
+        .microchip-preview svg { width: 100%; height: 100%; }
+        .microchip-preview-empty { display: flex; align-items: center; justify-content: center; font-size: 0.6rem; color: rgba(255,255,255,0.3); }
+
+        .node-content { padding: 8px 10px; font-size: 0.7rem; }
+
+        .pin-row { display: flex; align-items: center; margin: 4px 0; gap: 6px; }
+        .pin-row.input { justify-content: flex-start; }
+        .pin-row.output { justify-content: flex-end; }
+
+        .pin { width: 10px; height: 10px; background: #555; border: 2px solid #222; border-radius: 50%; cursor: crosshair; transition: all 0.2s; flex-shrink: 0; }
+        .pin:hover { background: #ffa726; transform: scale(1.3); }
+        .pin.connected { background: var(--wire-color); border-color: #78350f; }
+        .pin.exec { border-radius: 0; background: #fff; width: 12px; height: 12px; clip-path: polygon(0% 0%, 75% 0%, 100% 50%, 75% 100%, 0% 100%); border: none; }
+        .pin.exec:hover { background: #ffa726; }
+        .pin.bool { background: #a00; border-color: #600; }
+        .pin.float { background: #0a0; border-color: #060; }
+        .pin.objectref { background: #0a6; border-color: #044; }
+        .pin.objectref:hover { background: #ffa726; }
+        .pin.string { background: #a60; border-color: #640; }
+        .pin-label { font-size: 0.65rem; color: #aaa; white-space: nowrap; }
+
+        .reroute-point { position: absolute; width: 10px; height: 10px; background: var(--wire-color); border: 2px solid #222; border-radius: 50%; cursor: move; z-index: 15; transform: translate(-50%, -50%); }
+        .reroute-point:hover { transform: translate(-50%, -50%) scale(1.4); filter: brightness(1.3); }
+
+        .comment-box { position: absolute; border: 2px dashed rgba(255,255,255,0.2); background: rgba(100,100,150,0.08); backdrop-filter: blur(4px); border-radius: 4px; z-index: 1; padding: 10px; min-width: 200px; min-height: 100px; resize: both; overflow: auto; }
+        .comment-label { position: absolute; top: -22px; left: 0; font-size: 0.85rem; color: rgba(255,255,255,0.6); background: transparent; border: none; outline: none; width: 100%; font-weight: 500; }
+
+        #ui-overlay { position: fixed; bottom: 20px; left: 20px; display: flex; gap: 10px; z-index: 1000; }
+        .glass-btn { background: rgba(30, 30, 30, 0.9); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px 14px; border-radius: 4px; font-size: 0.7rem; cursor: pointer; color: white; transition: all 0.2s; }
+        .glass-btn:hover { background: rgba(50, 50, 50, 0.9); border-color: #ffa726; }
+        .glass-btn.active { border-color: #ffa726; color: #ffa726; }
+
+        #node-search { position: fixed; width: 320px; background: rgba(20, 20, 20, 0.98); backdrop-filter: blur(20px); border: 1px solid #ffa726; border-radius: 6px; box-shadow: 0 20px 50px rgba(0,0,0,0.9); z-index: 2000; display: none; }
+        .search-item { padding: 8px 12px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 0.75rem; }
+        .search-item:hover { background: #ffa726; color: #000; }
+        #node-sidebar { position: fixed; left: 0; top: 0; width: 220px; height: 100vh; background: rgba(18,18,22,0.98); border-right: 1px solid rgba(255,255,255,0.1); z-index: 150; overflow-y: auto; }
+        .sidebar-category { border-bottom: 1px solid rgba(255,255,255,0.06); }
+        .sidebar-category-header { padding: 8px 12px; font-size: 0.7rem; font-weight: 600; color: #ffa726; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .sidebar-category-header:hover { background: rgba(255,167,38,0.1); }
+        .sidebar-category-items { display: none; padding: 4px 0; }
+        .sidebar-category.open .sidebar-category-items { display: block; }
+        .sidebar-category.open .sidebar-category-header::after { content: '▼'; font-size: 0.6rem; }
+        .sidebar-category:not(.open) .sidebar-category-header::after { content: '▶'; font-size: 0.6rem; }
+        .sidebar-item { padding: 6px 12px 6px 20px; font-size: 0.68rem; cursor: pointer; color: rgba(255,255,255,0.85); }
+        .sidebar-item:hover { background: rgba(255,167,38,0.2); color: #fff; }
+        .sidebar-item.placeholder { cursor: default; color: rgba(255,255,255,0.4); font-style: italic; }
+        #sidebar-toggle { position: fixed; left: 220px; top: 50%; transform: translateY(-50%); width: 20px; height: 60px; background: rgba(30,30,30,0.9); border: 1px solid rgba(255,255,255,0.2); border-left: none; border-radius: 0 4px 4px 0; cursor: pointer; z-index: 151; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; color: #888; }
+        #sidebar-toggle:hover { background: rgba(50,50,50,0.95); color: #ffa726; }
+        #node-sidebar.collapsed { width: 0; overflow: hidden; }
+        #node-sidebar.collapsed + #sidebar-toggle { left: 0; }
+
+        #svg-layer { width: 100%; height: 100%; pointer-events: none; }
+        path.wire { fill: none; stroke: var(--wire-color); stroke-width: 2; stroke-linecap: round; pointer-events: visibleStroke; cursor: pointer; transition: stroke 0.2s; }
+        path.wire:hover { stroke: #fff; stroke-width: 3; }
+
+        .editor-container { width: 100%; height: 0; min-height: 0; overflow: hidden; background: #1e1e1e; transition: height 0.3s ease; display: flex; flex-direction: column; flex-shrink: 0; }
+        .editor-container.expanded { border-top: 1px solid #444; overflow: visible; flex: 1 1 0; min-height: 80px; }
+        .editor-container.expanded.mini { min-height: 80px; }
+        .editor-container.expanded.full { min-height: 200px; }
+        .editor-container.expanded .monaco-wrap { flex: 1 1 0; min-height: 60px; overflow: hidden; }
+        .editor-container .editor-toolbar { display: flex; align-items: center; gap: 6px; padding: 4px 8px; background: #252525; border-bottom: 1px solid #333; font-size: 0.65rem; }
+
+        .marquee { position: absolute; border: 1px solid #ffa726; background: rgba(255, 167, 38, 0.1); pointer-events: none; z-index: 100; }
+
+        .context-menu { position: fixed; background: rgba(20, 20, 20, 0.98); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 4px; padding: 4px 0; min-width: 180px; box-shadow: 0 10px 30px rgba(0,0,0,0.9); z-index: 3000; display: none; }
+        .context-menu li { padding: 7px 12px; font-size: 0.75rem; cursor: pointer; transition: background 0.15s; }
+        .context-menu li:hover { background: #ffa726; color: #000; }
+        .context-menu hr { border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 4px 0; }
+
+        #breadcrumbs { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; background: rgba(20, 20, 20, 0.9); backdrop-filter: blur(12px); padding: 8px 16px; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 4px; z-index: 100; font-size: 0.7rem; }
+        .breadcrumb { cursor: pointer; opacity: 0.5; transition: opacity 0.2s; }
+        .breadcrumb:hover { opacity: 1; }
+        .breadcrumb.active { opacity: 1; color: #ffa726; }
+
+        #mode-selector { position: fixed; top: 20px; right: 20px; display: flex; gap: 8px; align-items: center; background: rgba(20, 20, 20, 0.9); backdrop-filter: blur(12px); padding: 8px 12px; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 4px; z-index: 100; font-size: 0.7rem; }
+        #mode-dropdown { background: rgba(30, 30, 30, 0.95); border: 1px solid rgba(255, 255, 255, 0.3); color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.7rem; cursor: pointer; outline: none; font-family: 'Roboto Mono', monospace; }
+        #mode-dropdown:hover { border-color: #ffa726; }
+
+        .fullscreen-editor { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1e1e1e; z-index: 200; display: none; flex-direction: column; }
+        .fullscreen-editor.active { display: flex; }
+        .editor-header { background: rgba(30, 30, 30, 0.95); padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: space-between; align-items: center; color: white; font-size: 0.8rem; flex-shrink: 0; }
+        .editor-tabs { display: flex; gap: 2px; padding: 6px 12px; background: rgba(25,25,25,0.95); border-bottom: 1px solid rgba(255,255,255,0.08); overflow-x: auto; flex-shrink: 0; }
+        .editor-tabs.hidden { display: none; }
+        .editor-tab { padding: 4px 10px; font-size: 0.7rem; background: rgba(40,40,40,0.9); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; cursor: pointer; color: rgba(255,255,255,0.7); white-space: nowrap; }
+        .editor-tab:hover { background: rgba(50,50,50,0.95); color: #fff; }
+        .editor-tab.active { background: #ffa726; color: #000; border-color: #ffa726; }
+        .editor-body { width: 100%; flex: 1; min-height: 0; }
+
+        /* Node resize handle - always visible, drag bottom-right corner */
+        .node-resize-handle { position: absolute; right: 0; bottom: 0; width: 14px; height: 14px; cursor: nwse-resize; z-index: 5; background: linear-gradient(135deg, transparent 50%, rgba(255,167,38,0.4) 50%); border-radius: 0 0 4px 0; }
+        .node-resize-handle:hover { background: linear-gradient(135deg, transparent 50%, rgba(255,167,38,0.8) 50%); }
+
+        /* Transpile button in editor toolbar */
+        .editor-toolbar-row { display: flex; gap: 8px; align-items: center; padding: 4px 8px; background: #252525; border-bottom: 1px solid #333; font-size: 0.7rem; }
+    </style>
+</head>
+<body>
+
+    <div id="node-sidebar">
+        <div class="p-3 border-b border-white/10 font-semibold text-amber-400 text-sm">Scene Inspector</div>
+        <div id="sidebar-inspector">
+            <div class="sidebar-category open">
+                <div class="sidebar-category-header">Variables</div>
+                <div class="sidebar-category-items"><div class="sidebar-item placeholder">(graph variables)</div></div>
+            </div>
+            <div class="sidebar-category open">
+                <div class="sidebar-category-header">Components</div>
+                <div class="sidebar-category-items"><div class="sidebar-item placeholder">(selected actor)</div></div>
+            </div>
+            <div class="sidebar-category open">
+                <div class="sidebar-category-header">Actors</div>
+                <div class="sidebar-category-items"><div class="sidebar-item placeholder">(scene actors)</div></div>
+            </div>
+            <div class="sidebar-category open">
+                <div class="sidebar-category-header">Mesh Outliner</div>
+                <div class="sidebar-category-items"><div class="sidebar-item placeholder">(meshes in scene)</div></div>
+            </div>
+        </div>
+        <div class="p-2 border-t border-white/10 text-[10px] opacity-50 text-center">Shift+Space: add node</div>
+    </div>
+    <div id="sidebar-toggle" title="Toggle sidebar">◀</div>
+
+    <div id="viewport">
+        <div id="breadcrumbs"><span class="breadcrumb active" data-graph="root">Root</span></div>
+
+        <div id="mode-selector">
+            <span style="opacity: 0.6;">View:</span>
+            <select id="mode-dropdown">
+                <option value="visual">Visual Graph</option>
+                <option value="monaco">Code Editor</option>
+            </select>
+            <span style="opacity: 0.6; margin-left: 12px;">Exec:</span>
+            <select id="exec-mode-dropdown" style="background:rgba(30,30,30,0.95);border:1px solid rgba(255,255,255,0.3);color:white;padding:4px 8px;border-radius:4px;font-size:0.7rem;cursor:pointer;">
+                <option value="sequential">Sequential (one by one)</option>
+                <option value="parallel">Parallel (async)</option>
+            </select>
+            <button id="run-graph-btn" class="glass-btn" style="margin-left: 8px; padding: 4px 10px;">Run</button>
+        </div>
+
+        <div id="canvas-container">
+            <svg id="svg-layer" class="absolute"></svg>
+        </div>
+    </div>
+
+    <div id="fullscreen-editor" class="fullscreen-editor">
+        <div class="editor-header">
+            <span id="editor-title">Editing: Root</span>
+            <div class="editor-toolbar-row" style="flex:1;margin:0 16px;border:none;background:transparent;gap:12px;">
+                <label style="display:flex;align-items:center;gap:6px;font-size:0.65rem;opacity:0.7;"><input type="checkbox" id="editor-tabs-toggle" checked> Tabs</label>
+                <span style="opacity:0.6;font-size:0.7rem;">Language:</span>
+                <select id="editor-lang-dropdown" style="background:rgba(30,30,30,0.95);border:1px solid rgba(255,255,255,0.3);color:white;padding:4px 8px;border-radius:4px;font-size:0.7rem;cursor:pointer;">
+                    <option value="javascript">JavaScript</option>
+                    <option value="typescript">TypeScript (recommended)</option>
+                    <option value="lua">Lua</option>
+                </select>
+                <span style="opacity:0.5;font-size:0.65rem;">Per-tab: Graph/nodes use JS/TS/Lua. Microchips editable in Code view.</span>
+                <div id="transpile-area" style="display:none;align-items:center;gap:8px;">
+                    <button id="transpile-lua-btn" class="glass-btn">Transpile Lua → JS</button>
+                    <span style="opacity:0.6;font-size:0.65rem;">Converts to Basalt/JS</span>
+                </div>
+            </div>
+            <button onclick="editor.closeFullscreenEditor()" class="glass-btn" style="padding: 4px 12px; margin: 0;">Back to Visual</button>
+        </div>
+        <div id="editor-tabs" class="editor-tabs"></div>
+        <div id="fullscreen-editor-body" class="editor-body"></div>
+    </div>
+
+    <div id="ui-overlay">
+        <button id="toggle-style" class="glass-btn">Wire: Curved</button>
+        <a href="Editor_Layout.html" class="glass-btn" title="Back to main editor">Editor Layout</a>
+        <div class="text-[10px] opacity-40 self-center max-w-md">
+            Sidebar: add nodes | Shift+Space: search | Right-click node → Edit Logic (JS/TS/Lua) or Visual graph | Run: executes graph. <strong>Realtime</strong>—no compile. Code changes apply on next Run.
+        </div>
+    </div>
+
+    <div id="node-search">
+        <div class="p-3 border-b border-white/10">
+            <input type="text" id="search-input" placeholder="Type to find nodes..." class="w-full bg-black/40 border-none outline-none p-2 rounded text-sm text-white">
+        </div>
+        <div id="search-results" class="max-h-64 overflow-y-auto"></div>
+    </div>
+
+    <ul id="context-menu" class="context-menu">
+        <li class="text-amber-400 text-xs font-semibold px-3 py-1">Right-click canvas or Shift+Space</li>
+        <hr>
+        <li id="btn-create-comment">Add Comment (C)</li>
+        <hr>
+        <li class="text-[10px] opacity-50 px-3">Shift+Space to add nodes (search)</li>
+    </ul>
+
+    <ul id="node-menu" class="context-menu">
+        <li id="btn-edit-logic">Edit Logic (.js)</li>
+        <li id="btn-enter-microchip">Enter Microchip / Blueprint</li>
+        <hr>
+        <li id="btn-copy">Copy Node</li>
+        <li id="btn-delete" class="text-red-400">Delete</li>
+    </ul>
+
+    <script>
+        require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } });
+
+        const MICROCHIP_SAFE_CODE = `// Microchip logic - acts on attached target (player, circuit, etc.)
+// Wrapped in try/catch so it always works; edit freely.
+function execute(ctx) {
+  try {
+    if (typeof run === 'function') return run(ctx);
+    return undefined;
+  } catch (e) {
+    console.warn('[Microchip] Logic error:', e);
+    return undefined;
+  }
+}
+function run(ctx) {
+  // Your logic here. ctx = attached target.
+  return undefined;
+}`;
+
+        const NODE_CATEGORIES = {
+            Events: ["Event Begin Play", "Event Tick", "Event Async Tick", "Event Destroyed"],
+            "Flow Control": ["Branch", "Sequence", "Flip Flop", "Switch (bool)", "Switch (int)", "For Loop", "While Loop"],
+            Math: ["Add", "Subtract", "Multiply", "Divide", "Modulo", "Power", "Abs", "Clamp", "Lerp", "Min", "Max", "Sin", "Cos", "Tan", "Sqrt", "Floor", "Ceil", "Round", "Random Float", "Random Int"],
+            Logic: ["AND", "OR", "NOT", "Equal (bool)", "Not Equal (bool)", "Equal (float)", "Not Equal (float)", "Greater", "Less", "Greater Equal", "Less Equal"],
+            String: ["Print String", "Append", "Format", "Length", "Substring", "Contains", "Split", "To Upper", "To Lower"],
+            Blueprint: ["Microchip", "Blueprint", "Blueprint Reference", "Cast to Blueprint", "Get Object Ref", "Set Object Ref"],
+            "Spawn / Place": ["Trigger Zone", "Spawn Actor", "Destroy Actor", "Get Actor Location", "Set Actor Location"],
+            Vehicle: ["Create Vehicle", "Set Vehicle Input", "Get Vehicle Speed", "Get Vehicle Chassis"],
+            Constants: ["Make Float", "Make Int", "Make Bool", "Make String", "Make Vector"]
+        };
+
+        const NODE_DEFINITIONS = {
+            "Event Begin Play": { type: "event", category: "Events", pins: { outputs: [{ id: "exec", label: "", type: "exec" }] } },
+            "Event Tick": { type: "event", category: "Events", pins: { outputs: [{ id: "exec", label: "", type: "exec" }, { id: "delta", label: "Delta Seconds", type: "float" }] } },
+            "Event Async Tick": { type: "event", category: "Events", pins: { outputs: [{ id: "exec", label: "", type: "exec" }, { id: "async", label: "Async Tick", type: "exec" }] } },
+            "Event Destroyed": { type: "event", category: "Events", pins: { outputs: [{ id: "exec", label: "", type: "exec" }] } },
+            "Branch": { type: "branch", category: "Flow Control", pins: { inputs: [{ id: "exec", label: "", type: "exec" }, { id: "condition", label: "Condition", type: "bool" }], outputs: [{ id: "true", label: "True", type: "exec" }, { id: "false", label: "False", type: "exec" }] } },
+            "Sequence": { type: "logic", category: "Flow Control", pins: { inputs: [{ id: "exec", label: "", type: "exec" }], outputs: [{ id: "then0", label: "Then 0", type: "exec" }, { id: "then1", label: "Then 1", type: "exec" }] } },
+            "Flip Flop": { type: "logic", category: "Flow Control", pins: { inputs: [{ id: "exec", label: "", type: "exec" }], outputs: [{ id: "a", label: "A", type: "exec" }, { id: "b", label: "B", type: "exec" }] } },
+            "Switch (bool)": { type: "logic", category: "Flow Control", pins: { inputs: [{ id: "exec", label: "", type: "exec" }, { id: "value", label: "Value", type: "bool" }], outputs: [{ id: "true", label: "True", type: "exec" }, { id: "false", label: "False", type: "exec" }] } },
+            "Switch (int)": { type: "logic", category: "Flow Control", pins: { inputs: [{ id: "exec", label: "", type: "exec" }, { id: "value", label: "Value", type: "float" }], outputs: [{ id: "default", label: "Default", type: "exec" }, { id: "0", label: "0", type: "exec" }, { id: "1", label: "1", type: "exec" }, { id: "2", label: "2", type: "exec" }] } },
+            "For Loop": { type: "logic", category: "Flow Control", pins: { inputs: [{ id: "exec", label: "", type: "exec" }, { id: "first", label: "First Index", type: "float" }, { id: "last", label: "Last Index", type: "float" }], outputs: [{ id: "loop", label: "Loop", type: "exec" }, { id: "index", label: "Index", type: "float" }, { id: "completed", label: "Completed", type: "exec" }] } },
+            "While Loop": { type: "logic", category: "Flow Control", pins: { inputs: [{ id: "exec", label: "", type: "exec" }, { id: "condition", label: "Condition", type: "bool" }], outputs: [{ id: "loop", label: "Loop", type: "exec" }, { id: "completed", label: "Completed", type: "exec" }] } },
+            "Add": { type: "logic", category: "Math", pins: { inputs: [{ id: "a", label: "A", type: "float" }, { id: "b", label: "B", type: "float" }], outputs: [{ id: "result", label: "Result", type: "float" }] } },
+            "Subtract": { type: "logic", category: "Math", pins: { inputs: [{ id: "a", label: "A", type: "float" }, { id: "b", label: "B", type: "float" }], outputs: [{ id: "result", label: "Result", type: "float" }] } },
+            "Multiply": { type: "logic", category: "Math", pins: { inputs: [{ id: "a", label: "A", type: "float" }, { id: "b", label: "B", type: "float" }], outputs: [{ id: "result", label: "Result", type: "float" }] } },
+            "Divide": { type: "logic", category: "Math", pins: { inputs: [{ id: "a", label: "A", type: "float" }, { id: "b", label: "B", type: "float" }], outputs: [{ id: "result", label: "Result", type: "float" }] } },
+            "Modulo": { type: "logic", category: "Math", pins: { inputs: [{ id: "a", label: "A", type: "float" }, { id: "b", label: "B", type: "float" }], outputs: [{ id: "result", label: "Result", type: "float" }] } },
+            "Power": { type: "logic", category: "Math", pins: { inputs: [{ id: "base", label: "Base", type: "float" }, { id: "exp", label: "Exp", type: "float" }], outputs: [{ id: "result", label: "Result", type: "float" }] } },
+            "Abs": { type: "logic", category: "Math", pins: { inputs: [{ id: "a", label: "A", type: "float" }], outputs: [{ id: "result", label: "Result", type: "float" }] } },
+            "Clamp": { type: "logic", category: "Math", pins: { inputs: [{ id: "value", label: "Value", type: "float" }, { id: "min", label: "Min", type: "float" }, { id: "max", label: "Max", type: "float" }], outputs: [{ id: "result", label: "Result", type: "float" }] } },
+            "Lerp": { type: "logic", category: "Math", pins: { inputs: [{ id: "a", label: "A", type: "float" }, { id: "b", label: "B", type: "float" }, { id: "alpha", label: "Alpha", type: "float" }], outputs: [{ id: "result", label: "Result", type: "float" }] } },
+            "Min": { type: "logic", category: "Math", pins: { inputs: [{ id: "a", label: "A", type: "float" }, { id: "b", label: "B", type: "float" }], outputs: [{ id: "result", label: "Result", type: "float" }] } },
+            "Max": { type: "logic", category: "Math", pins: { inputs: [{ id: "a", label: "A", type: "float" }, { id: "b", label: "B", type: "float" }], outputs: [{ id: "result", label: "Result", type: "float" }] } },
+            "Sin": { type: "logic", category: "Math", pins: { inputs: [{ id: "a", label: "A", type: "float" }], outputs: [{ id: "result", label: "Result", type: "float" }] } },
+            "Cos": { type: "logic", category: "Math", pins: { inputs: [{ id: "a", label: "A", type: "float" }], outputs: [{ id: "result", label: "Result", type: "float" }] } },
+            "Tan": { type: "logic", category: "Math", pins: { inputs: [{ id: "a", label: "A", type: "float" }], outputs: [{ id: "result", label: "Result", type: "float" }] } },
+            "Sqrt": { type: "logic", category: "Math", pins: { inputs: [{ id: "a", label: "A", type: "float" }], outputs: [{ id: "result", label: "Result", type: "float" }] } },
+            "Floor": { type: "logic", category: "Math", pins: { inputs: [{ id: "a", label: "A", type: "float" }], outputs: [{ id: "result", label: "Result", type: "float" }] } },
+            "Ceil": { type: "logic", category: "Math", pins: { inputs: [{ id: "a", label: "A", type: "float" }], outputs: [{ id: "result", label: "Result", type: "float" }] } },
+            "Round": { type: "logic", category: "Math", pins: { inputs: [{ id: "a", label: "A", type: "float" }], outputs: [{ id: "result", label: "Result", type: "float" }] } },
+            "Random Float": { type: "logic", category: "Math", pins: { inputs: [{ id: "min", label: "Min", type: "float" }, { id: "max", label: "Max", type: "float" }], outputs: [{ id: "result", label: "Result", type: "float" }] } },
+            "Random Int": { type: "logic", category: "Math", pins: { inputs: [{ id: "min", label: "Min", type: "float" }, { id: "max", label: "Max", type: "float" }], outputs: [{ id: "result", label: "Result", type: "float" }] } },
+            "AND": { type: "logic", category: "Logic", pins: { inputs: [{ id: "a", label: "A", type: "bool" }, { id: "b", label: "B", type: "bool" }], outputs: [{ id: "result", label: "Result", type: "bool" }] } },
+            "OR": { type: "logic", category: "Logic", pins: { inputs: [{ id: "a", label: "A", type: "bool" }, { id: "b", label: "B", type: "bool" }], outputs: [{ id: "result", label: "Result", type: "bool" }] } },
+            "NOT": { type: "logic", category: "Logic", pins: { inputs: [{ id: "a", label: "A", type: "bool" }], outputs: [{ id: "result", label: "Result", type: "bool" }] } },
+            "Equal (bool)": { type: "logic", category: "Logic", pins: { inputs: [{ id: "a", label: "A", type: "bool" }, { id: "b", label: "B", type: "bool" }], outputs: [{ id: "result", label: "Result", type: "bool" }] } },
+            "Not Equal (bool)": { type: "logic", category: "Logic", pins: { inputs: [{ id: "a", label: "A", type: "bool" }, { id: "b", label: "B", type: "bool" }], outputs: [{ id: "result", label: "Result", type: "bool" }] } },
+            "Equal (float)": { type: "logic", category: "Logic", pins: { inputs: [{ id: "a", label: "A", type: "float" }, { id: "b", label: "B", type: "float" }], outputs: [{ id: "result", label: "Result", type: "bool" }] } },
+            "Not Equal (float)": { type: "logic", category: "Logic", pins: { inputs: [{ id: "a", label: "A", type: "float" }, { id: "b", label: "B", type: "float" }], outputs: [{ id: "result", label: "Result", type: "bool" }] } },
+            "Greater": { type: "logic", category: "Logic", pins: { inputs: [{ id: "a", label: "A", type: "float" }, { id: "b", label: "B", type: "float" }], outputs: [{ id: "result", label: "Result", type: "bool" }] } },
+            "Less": { type: "logic", category: "Logic", pins: { inputs: [{ id: "a", label: "A", type: "float" }, { id: "b", label: "B", type: "float" }], outputs: [{ id: "result", label: "Result", type: "bool" }] } },
+            "Greater Equal": { type: "logic", category: "Logic", pins: { inputs: [{ id: "a", label: "A", type: "float" }, { id: "b", label: "B", type: "float" }], outputs: [{ id: "result", label: "Result", type: "bool" }] } },
+            "Less Equal": { type: "logic", category: "Logic", pins: { inputs: [{ id: "a", label: "A", type: "float" }, { id: "b", label: "B", type: "float" }], outputs: [{ id: "result", label: "Result", type: "bool" }] } },
+            "Print String": { type: "logic", category: "String", pins: { inputs: [{ id: "exec", label: "", type: "exec" }, { id: "string", label: "In String", type: "string" }], outputs: [{ id: "exec", label: "", type: "exec" }] } },
+            "Append": { type: "logic", category: "String", pins: { inputs: [{ id: "a", label: "A", type: "string" }, { id: "b", label: "B", type: "string" }], outputs: [{ id: "result", label: "Result", type: "string" }] } },
+            "Format": { type: "logic", category: "String", pins: { inputs: [{ id: "format", label: "Format", type: "string" }, { id: "a", label: "A", type: "float" }], outputs: [{ id: "result", label: "Result", type: "string" }] } },
+            "Length": { type: "logic", category: "String", pins: { inputs: [{ id: "string", label: "String", type: "string" }], outputs: [{ id: "result", label: "Result", type: "float" }] } },
+            "Substring": { type: "logic", category: "String", pins: { inputs: [{ id: "string", label: "String", type: "string" }, { id: "start", label: "Start", type: "float" }, { id: "length", label: "Length", type: "float" }], outputs: [{ id: "result", label: "Result", type: "string" }] } },
+            "Contains": { type: "logic", category: "String", pins: { inputs: [{ id: "string", label: "String", type: "string" }, { id: "sub", label: "Substring", type: "string" }], outputs: [{ id: "result", label: "Result", type: "bool" }] } },
+            "Split": { type: "logic", category: "String", pins: { inputs: [{ id: "string", label: "String", type: "string" }, { id: "delimiter", label: "Delimiter", type: "string" }], outputs: [{ id: "result", label: "Result", type: "string" }] } },
+            "To Upper": { type: "logic", category: "String", pins: { inputs: [{ id: "string", label: "String", type: "string" }], outputs: [{ id: "result", label: "Result", type: "string" }] } },
+            "To Lower": { type: "logic", category: "String", pins: { inputs: [{ id: "string", label: "String", type: "string" }], outputs: [{ id: "result", label: "Result", type: "string" }] } },
+            "Microchip": { type: "microchip", category: "Blueprint", pins: { inputs: [{ id: "exec", label: "", type: "exec" }], outputs: [{ id: "exec", label: "", type: "exec" }] } },
+            "Blueprint": { type: "blueprint", category: "Blueprint", pins: { inputs: [{ id: "exec", label: "", type: "exec" }], outputs: [{ id: "exec", label: "", type: "exec" }] } },
+            "Blueprint Reference": { type: "blueprint_ref", category: "Blueprint", pins: { outputs: [{ id: "ref", label: "Ref (must cast)", type: "objectref" }] }, prefabPath: null },
+            "Cast to Blueprint": { type: "logic", category: "Blueprint", pins: { inputs: [{ id: "object", label: "Object", type: "objectref" }], outputs: [{ id: "result", label: "Blueprint Ref", type: "objectref" }] }, blueprintType: "" },
+            "Get Object Ref": { type: "logic", category: "Blueprint", pins: { inputs: [], outputs: [{ id: "ref", label: "Ref", type: "objectref" }] }, variableName: "objRef" },
+            "Set Object Ref": { type: "logic", category: "Blueprint", pins: { inputs: [{ id: "exec", label: "", type: "exec" }, { id: "ref", label: "Ref", type: "objectref" }], outputs: [{ id: "exec", label: "", type: "exec" }] }, variableName: "objRef" },
+            "Trigger Zone": { type: "logic", category: "Spawn / Place", pins: { inputs: [{ id: "exec", label: "", type: "exec" }], outputs: [{ id: "onEnter", label: "On Enter", type: "exec" }, { id: "onExit", label: "On Exit", type: "exec" }] } },
+            "Spawn Actor": { type: "logic", category: "Spawn / Place", pins: { inputs: [{ id: "exec", label: "", type: "exec" }, { id: "class", label: "Class", type: "objectref" }, { id: "location", label: "Location", type: "float" }], outputs: [{ id: "exec", label: "", type: "exec" }, { id: "actor", label: "Actor", type: "objectref" }] } },
+            "Destroy Actor": { type: "logic", category: "Spawn / Place", pins: { inputs: [{ id: "exec", label: "", type: "exec" }, { id: "actor", label: "Actor", type: "objectref" }], outputs: [{ id: "exec", label: "", type: "exec" }] } },
+            "Get Actor Location": { type: "logic", category: "Spawn / Place", pins: { inputs: [{ id: "actor", label: "Actor", type: "objectref" }], outputs: [{ id: "location", label: "Location", type: "float" }] } },
+            "Set Actor Location": { type: "logic", category: "Spawn / Place", pins: { inputs: [{ id: "exec", label: "", type: "exec" }, { id: "actor", label: "Actor", type: "objectref" }, { id: "location", label: "Location", type: "float" }], outputs: [{ id: "exec", label: "", type: "exec" }] } },
+            "Create Vehicle": { type: "logic", category: "Vehicle", pins: { inputs: [{ id: "exec", label: "", type: "exec" }, { id: "location", label: "Location", type: "float" }], outputs: [{ id: "exec", label: "", type: "exec" }, { id: "vehicle", label: "Vehicle", type: "objectref" }] } },
+            "Set Vehicle Input": { type: "logic", category: "Vehicle", pins: { inputs: [{ id: "exec", label: "", type: "exec" }, { id: "vehicle", label: "Vehicle", type: "objectref" }, { id: "fwd", label: "Forward", type: "float" }, { id: "side", label: "Steer", type: "float" }], outputs: [{ id: "exec", label: "", type: "exec" }] } },
+            "Get Vehicle Speed": { type: "logic", category: "Vehicle", pins: { inputs: [{ id: "vehicle", label: "Vehicle", type: "objectref" }], outputs: [{ id: "speed", label: "Speed", type: "float" }] } },
+            "Get Vehicle Chassis": { type: "logic", category: "Vehicle", pins: { inputs: [{ id: "vehicle", label: "Vehicle", type: "objectref" }], outputs: [{ id: "chassis", label: "Chassis", type: "objectref" }] } },
+            "Make Float": { type: "logic", category: "Constants", pins: { inputs: [{ id: "value", label: "Value", type: "float" }], outputs: [{ id: "result", label: "Result", type: "float" }] } },
+            "Make Int": { type: "logic", category: "Constants", pins: { inputs: [{ id: "value", label: "Value", type: "float" }], outputs: [{ id: "result", label: "Result", type: "float" }] } },
+            "Make Bool": { type: "logic", category: "Constants", pins: { inputs: [{ id: "value", label: "Value", type: "bool" }], outputs: [{ id: "result", label: "Result", type: "bool" }] } },
+            "Make String": { type: "logic", category: "Constants", pins: { inputs: [{ id: "value", label: "Value", type: "string" }], outputs: [{ id: "result", label: "Result", type: "string" }] } },
+            "Make Vector": { type: "logic", category: "Constants", pins: { inputs: [{ id: "x", label: "X", type: "float" }, { id: "y", label: "Y", type: "float" }, { id: "z", label: "Z", type: "float" }], outputs: [{ id: "result", label: "Result", type: "float" }] } }
+        };
+
+        const NODE_IMPLEMENTATIONS = {
+            "Add": (a, b) => (Number(a) || 0) + (Number(b) || 0),
+            "Subtract": (a, b) => (Number(a) || 0) - (Number(b) || 0),
+            "Multiply": (a, b) => (Number(a) || 0) * (Number(b) || 0),
+            "Divide": (a, b) => { const n = Number(b); return n ? (Number(a) || 0) / n : 0; },
+            "Modulo": (a, b) => { const n = Number(b); return n ? (Number(a) || 0) % n : 0; },
+            "Power": (a, b) => Math.pow(Number(a) || 0, Number(b) || 0),
+            "Abs": a => Math.abs(Number(a) || 0),
+            "Clamp": (v, min, max) => Math.max(Number(min) || 0, Math.min(Number(max) || 0, Number(v) || 0)),
+            "Lerp": (a, b, t) => (Number(a) || 0) + ((Number(b) || 0) - (Number(a) || 0)) * (Number(t) || 0),
+            "Min": (a, b) => Math.min(Number(a) ?? Infinity, Number(b) ?? Infinity),
+            "Max": (a, b) => Math.max(Number(a) ?? -Infinity, Number(b) ?? -Infinity),
+            "Sin": a => Math.sin(Number(a) || 0),
+            "Cos": a => Math.cos(Number(a) || 0),
+            "Tan": a => Math.tan(Number(a) || 0),
+            "Sqrt": a => Math.sqrt(Math.max(0, Number(a) || 0)),
+            "Floor": a => Math.floor(Number(a) || 0),
+            "Ceil": a => Math.ceil(Number(a) || 0),
+            "Round": a => Math.round(Number(a) || 0),
+            "Random Float": (min, max) => (Number(min) || 0) + Math.random() * ((Number(max) || 1) - (Number(min) || 0)),
+            "Random Int": (min, max) => Math.floor((Number(min) || 0) + Math.random() * (Math.floor(Number(max) || 1) - Math.floor(Number(min) || 0) + 1)),
+            "AND": (a, b) => !!a && !!b,
+            "OR": (a, b) => !!a || !!b,
+            "NOT": a => !a,
+            "Equal (bool)": (a, b) => !!a === !!b,
+            "Not Equal (bool)": (a, b) => !!a !== !!b,
+            "Equal (float)": (a, b) => Math.abs((Number(a) || 0) - (Number(b) || 0)) < 1e-6,
+            "Not Equal (float)": (a, b) => Math.abs((Number(a) || 0) - (Number(b) || 0)) >= 1e-6,
+            "Greater": (a, b) => (Number(a) || 0) > (Number(b) || 0),
+            "Less": (a, b) => (Number(a) || 0) < (Number(b) || 0),
+            "Greater Equal": (a, b) => (Number(a) || 0) >= (Number(b) || 0),
+            "Less Equal": (a, b) => (Number(a) || 0) <= (Number(b) || 0),
+            "Append": (a, b) => String(a ?? '') + String(b ?? ''),
+            "Length": s => (String(s ?? '').length),
+            "Substring": (s, start, len) => String(s ?? '').substring(Number(start) || 0, (Number(start) || 0) + (Number(len) || 0)),
+            "Contains": (s, sub) => String(s ?? '').includes(String(sub ?? '')),
+            "To Upper": s => String(s ?? '').toUpperCase(),
+            "To Lower": s => String(s ?? '').toLowerCase(),
+            "Format": (fmt, a) => String(fmt ?? '').replace(/%[sdf]/g, m => m === '%s' ? String(a ?? '') : m === '%d' ? String(Math.floor(Number(a) || 0)) : String(Number(a) || 0)),
+            "Split": (s, d) => JSON.stringify(String(s ?? '').split(String(d ?? ','))),
+            "Make Float": v => Number(v) ?? 0,
+            "Make Int": v => Math.floor(Number(v) ?? 0),
+            "Make Bool": v => !!v,
+            "Make String": v => String(v ?? ''),
+            "Make Vector": (x, y, z) => ({ x: Number(x) || 0, y: Number(y) || 0, z: Number(z) || 0 }),
+            "Get Vehicle Speed": (vehicle) => {
+                const c = vehicle?.chassis;
+                const pb = c?.physicsBody;
+                if (!pb?.getLinearVelocity) return 0;
+                const v = pb.getLinearVelocity();
+                return v ? Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z) : 0;
+            },
+            "Get Vehicle Chassis": (vehicle) => vehicle?.chassis ?? null
+        };
+
+        const NODE_LIBRARY = Object.keys(NODE_DEFINITIONS).map(name => ({ name, type: NODE_DEFINITIONS[name].type, category: NODE_DEFINITIONS[name].category }));
+
+        const DEFAULT_SVG_DEFS = `<defs>
+  <radialGradient id="grad-soft-shadow" cx="0.5" cy="0.5" r="0.5">
+    <stop offset="85%" stop-color="#242a2e" stop-opacity="0.4"/>
+    <stop offset="100%" stop-color="#242a2e" stop-opacity="0"/>
+  </radialGradient>
+  <linearGradient id="grad-base" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#52595f"/>
+    <stop offset="100%" stop-color="#2b3238"/>
+  </linearGradient>
+  <linearGradient id="grad-highlight" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#70777d" stop-opacity="1"/>
+    <stop offset="40%" stop-color="#70777d" stop-opacity="0"/>
+    <stop offset="100%" stop-color="#70777d" stop-opacity="0.3"/>
+  </linearGradient>
+  <filter id="glow">
+    <feGaussianBlur in="SourceGraphic" result="blur" stdDeviation="2"/>
+    <feComposite in="blur" in2="SourceGraphic" operator="over"/>
+  </filter>
+</defs>`;
+
+        function buildMicrochipPreview(graphId, graphs, w, h) {
+            const g = graphs[graphId];
+            if (!g || !g.nodes || g.nodes.length === 0) return null;
+            const nodes = g.nodes, wires = g.wires || [];
+            const defW = 180, defH = 60;
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            nodes.forEach(n => {
+                const nw = n.width ?? defW, nh = n.height ?? defH;
+                minX = Math.min(minX, n.x);
+                minY = Math.min(minY, n.y);
+                maxX = Math.max(maxX, n.x + nw);
+                maxY = Math.max(maxY, n.y + nh);
+            });
+            const rangeX = Math.max(maxX - minX, 1), rangeY = Math.max(maxY - minY, 1);
+            const pad = 4, vw = w - pad * 2, vh = h - pad * 2;
+            const scale = Math.min(vw / rangeX, vh / rangeY, 1);
+            const ox = pad + (vw - rangeX * scale) / 2 - minX * scale;
+            const oy = pad + (vh - rangeY * scale) / 2 - minY * scale;
+            const nodeMap = {};
+            nodes.forEach(n => {
+                const nw = n.width ?? defW, nh = n.height ?? defH;
+                nodeMap[n.id] = { cx: ox + n.x * scale + nw * scale / 2, cy: oy + n.y * scale + nh * scale / 2 };
+            });
+            let paths = '';
+            wires.forEach(wire => {
+                const a = nodeMap[wire.from], b = nodeMap[wire.to];
+                if (a && b) paths += `<path d="M ${a.cx} ${a.cy} L ${b.cx} ${b.cy}" fill="none" stroke="#fbbf24" stroke-width="1"/>`;
+            });
+            let rects = '';
+            nodes.forEach(n => {
+                const nw = n.width ?? defW, nh = n.height ?? defH;
+                const x = ox + n.x * scale, y = oy + n.y * scale, rw = nw * scale, rh = nh * scale;
+                rects += `<rect x="${x}" y="${y}" width="${rw}" height="${rh}" fill="rgba(50,50,50,0.9)" stroke="rgba(255,255,255,0.2)" stroke-width="0.5"/>`;
+            });
+            return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet">${paths}${rects}</svg>`;
+        }
+
+        async function transpileLuaToJs(luaCode) {
+            try {
+                const mod = await import('https://esm.sh/@xiangnanscu/lua2js@0.34.0');
+                return mod.lua2js(luaCode, { camelStyle: true, printToConsoleLog: true });
+            } catch (e) {
+                console.warn('[Nexus] Lua→JS failed:', e);
+                return null;
+            }
+        }
+
+        async function transpileJsToLua(jsCode) {
+            try {
+                const mod = await import('https://esm.sh/@xiangnanscu/js2lua@0.34.0');
+                return mod.js2lua(jsCode, { transformConsoleLog: true });
+            } catch (e) {
+                console.warn('[Nexus] JS→Lua failed:', e);
+                return null;
+            }
+        }
+
+        class NexusEditor {
+            constructor() {
+                this.container = document.getElementById('canvas-container');
+                this.svg = document.getElementById('svg-layer');
+                this.currentGraph = 'root';
+                this.graphs = { 'root': { nodes: [], wires: [], reroutes: [], comments: [], pan: {x: 0, y: 0}, code: '// Root graph code\nfunction execute() {\n  console.log("Root graph executing");\n}\n', codeLua: null, codeLanguage: 'javascript', svgDefs: DEFAULT_SVG_DEFS } };
+                this.pan = { x: 0, y: 0 };
+                this.zoom = 1;
+                this.selection = new Set();
+                this.clipboard = [];
+                this.wireStyle = 'curved';
+                this.monacoEditors = {};
+                this.fullscreenEditor = null;
+                this.editorCodeLanguage = 'javascript';
+                this._syncDebounce = null;
+                this.activeCodeTab = 'graph';
+                this.execMode = 'sequential';
+                this.viewMode = 'visual';
+                this.dragTarget = null;
+                this.activeWire = null;
+                this.isPanning = false;
+                this.isMarquee = false;
+                this.init();
+            }
+
+            init() {
+                this.setupEventListeners();
+                this.buildSidebar();
+                this.addNode('Event Begin Play', 200, 200);
+                this.addNode('Branch', 500, 200);
+                this.render();
+                this.updateBreadcrumbs();
+            }
+
+            buildSidebar() {
+                const container = document.getElementById('sidebar-inspector');
+                if (container) {
+                    container.querySelectorAll('.sidebar-category-header').forEach(h => {
+                        h.onclick = () => h.closest('.sidebar-category')?.classList.toggle('open');
+                    });
+                }
+                document.getElementById('sidebar-toggle')?.addEventListener('click', () => {
+                    document.getElementById('node-sidebar').classList.toggle('collapsed');
+                    document.getElementById('sidebar-toggle').textContent = document.getElementById('node-sidebar').classList.contains('collapsed') ? '▶' : '◀';
+                });
+            }
+
+            setupEventListeners() {
+                const contextMenu = document.getElementById('context-menu');
+                const nodeMenu = document.getElementById('node-menu');
+                const search = document.getElementById('node-search');
+
+                document.getElementById('transpile-lua-btn')?.addEventListener('click', () => this.transpileCurrentCode());
+                document.getElementById('editor-lang-dropdown')?.addEventListener('change', (e) => { if (this.fullscreenEditor) this.switchEditorLanguage(e.target.value); });
+                document.getElementById('editor-tabs-toggle')?.addEventListener('change', (e) => {
+                    const tabs = document.getElementById('editor-tabs');
+                    if (tabs) tabs.classList.toggle('hidden', !e.target.checked);
+                });
+                document.getElementById('exec-mode-dropdown')?.addEventListener('change', (e) => { this.execMode = e.target.value; });
+                document.getElementById('run-graph-btn')?.addEventListener('click', () => this.executeGraph());
+
+                window.addEventListener('mousedown', (e) => {
+                    if (!e.target.closest('#context-menu')) contextMenu.style.display = 'none';
+                    if (!e.target.closest('#node-menu')) nodeMenu.style.display = 'none';
+                    if (!e.target.closest('#node-search')) search.style.display = 'none';
+
+                    if (e.target.closest('.node-resize-handle')) {
+                        e.stopPropagation();
+                        const nodeEl = e.target.closest('.node');
+                        if (nodeEl) this.dragTarget = { type: 'resize', id: nodeEl.id };
+                        return;
+                    }
+
+                    if (e.button === 2 && !e.target.closest('.node') && !e.target.closest('.comment-box')) {
+                        const onEmpty = !e.target.closest('.node') && !e.target.closest('.reroute-point') && !e.target.closest('.comment-box') && (e.target === this.container || e.target === this.svg || e.target.closest('#canvas-container'));
+                        if (onEmpty) {
+                            e.preventDefault();
+                            this.showSearch(e.clientX || 500, e.clientY || 400);
+                            return;
+                        }
+                        this.startMarquee(e);
+                    } else if ((e.button === 1 || (e.button === 2 && (e.target === this.container || e.target.closest('#canvas-container')))) && !e.target.closest('.node') && !e.target.closest('.node-resize-handle')) {
+                        this.isPanning = true;
+                    }
+                });
+
+                window.addEventListener('mousemove', (e) => {
+                    if (this.isPanning) { this.pan.x += e.movementX; this.pan.y += e.movementY; this.updateView(); }
+                    if (this.isMarquee) this.updateMarquee(e);
+                    if (this.dragTarget?.type === 'resize') this.handleResizeDrag(e);
+                    else if (this.dragTarget) this.handleDrag(e);
+                    if (this.activeWire) this.updateWireDrag(e);
+                });
+
+                window.addEventListener('mouseup', (e) => {
+                    this.isPanning = false;
+                    if (this.dragTarget?.type === 'resize') this.dragTarget = null;
+                    else this.dragTarget = null;
+                    if (this.isMarquee) this.finishMarquee();
+                    if (this.activeWire) this.finalizeWire(e);
+                });
+
+                window.addEventListener('wheel', (e) => {
+                    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+                    this.zoom = Math.min(Math.max(this.zoom * delta, 0.2), 2);
+                    this.updateView();
+                }, { passive: false });
+
+                window.addEventListener('keydown', (e) => {
+                    if (e.shiftKey && e.code === 'Space') { e.preventDefault(); this.showSearch(e.clientX || 500, e.clientY || 400); }
+                    if (e.key === 'Delete') this.deleteSelection();
+                    if (e.key === 'c' && !e.ctrlKey && !e.metaKey) this.createComment();
+                    if (e.ctrlKey || e.metaKey) {
+                        if (e.key === 'c') { e.preventDefault(); this.copySelection(); }
+                        if (e.key === 'v') { e.preventDefault(); this.pasteClipboard(); }
+                    }
+                });
+
+                document.getElementById('search-input').addEventListener('input', (e) => this.filterSearch(e.target.value));
+
+                document.getElementById('toggle-style').addEventListener('click', () => {
+                    this.wireStyle = this.wireStyle === 'curved' ? 'electronic' : 'curved';
+                    document.getElementById('toggle-style').innerText = `Wire: ${this.wireStyle.charAt(0).toUpperCase() + this.wireStyle.slice(1)}`;
+                    this.renderWires();
+                });
+
+                window.addEventListener('contextmenu', (e) => {
+                    const nodeEl = e.target.closest('.node');
+                    if (nodeEl && !e.target.closest('.node-resize-handle')) {
+                        e.preventDefault();
+                        this.showNodeMenu(e, nodeEl.id);
+                    } else if (!e.target.closest('#node-search') && (e.target === this.container || e.target.closest('#canvas-container') && !e.target.closest('.node') && !e.target.closest('.comment-box') && !e.target.closest('.reroute-point'))) {
+                        e.preventDefault();
+                        this.showSearch(e.clientX, e.clientY);
+                    } else if (!nodeEl) {
+                        e.preventDefault();
+                        this.showContextMenu(e);
+                    }
+                });
+
+                document.getElementById('btn-create-comment').addEventListener('click', () => { this.createComment(); contextMenu.style.display = 'none'; });
+                document.getElementById('btn-edit-logic').addEventListener('click', () => { this.toggleNodeEditor(this.selectedNodeId); nodeMenu.style.display = 'none'; });
+                document.getElementById('btn-enter-microchip').addEventListener('click', () => { this.enterMicrochip(this.selectedNodeId); nodeMenu.style.display = 'none'; });
+                document.getElementById('btn-copy').addEventListener('click', () => { this.copySelection(); nodeMenu.style.display = 'none'; });
+                document.getElementById('btn-delete').addEventListener('click', () => { this.deleteNode(this.selectedNodeId); nodeMenu.style.display = 'none'; });
+
+                document.getElementById('mode-dropdown').addEventListener('change', (e) => this.switchViewMode(e.target.value));
+
+                this.svg.addEventListener('mousedown', (e) => {
+                    if (e.ctrlKey && e.target.tagName === 'path') {
+                        const wireId = e.target.dataset.wireId;
+                        const rect = this.container.getBoundingClientRect();
+                        const x = (e.clientX - rect.left) / this.zoom;
+                        const y = (e.clientY - rect.top) / this.zoom;
+                        this.addReroute(wireId, x, y);
+                    }
+                });
+            }
+
+            handleResizeDrag(e) {
+                const node = this.graphs[this.currentGraph].nodes.find(n => n.id === this.dragTarget.id);
+                if (!node) return;
+                const el = document.getElementById(node.id);
+                if (!el) return;
+                const rect = el.getBoundingClientRect();
+                const cr = this.container.getBoundingClientRect();
+                const nodeX = (rect.left - cr.left) / this.zoom;
+                const nodeY = (rect.top - cr.top) / this.zoom;
+                const newRight = (e.clientX - cr.left) / this.zoom;
+                const newBottom = (e.clientY - cr.top) / this.zoom;
+                let w = Math.max(180, newRight - node.x);
+                let h = Math.max(60, newBottom - node.y);
+                node.width = w;
+                node.height = h;
+                el.style.width = w + 'px';
+                el.style.minWidth = w + 'px';
+                el.style.height = h + 'px';
+                el.style.minHeight = h + 'px';
+                this.renderWires();
+                this.layoutInlineMonaco(node.id);
+            }
+
+            layoutInlineMonaco(nodeId) {
+                const ed = this.monacoEditors[nodeId];
+                if (!ed) return;
+                requestAnimationFrame(() => {
+                    const el = document.getElementById(nodeId);
+                    const wrap = el?.querySelector('.editor-container.expanded .monaco-wrap');
+                    if (wrap) {
+                        const rect = wrap.getBoundingClientRect();
+                        if (rect.width > 0 && rect.height > 0) ed.layout({ width: rect.width, height: rect.height });
+                    } else {
+                        ed.layout();
+                    }
+                });
+            }
+
+            async transpileCurrentCode() {
+                const graph = this.graphs[this.currentGraph];
+                if (!this.fullscreenEditor) return;
+                const code = this.fullscreenEditor.getValue();
+                const js = await transpileLuaToJs(code);
+                if (js) {
+                    this.fullscreenEditor.setValue(js);
+                    graph.code = js;
+                } else {
+                    alert('Lua transpilation failed. Ensure code is valid Lua. Uses @xiangnanscu/lua2js (esm.sh).');
+                }
+            }
+
+            updateView() { this.container.style.transform = `translate(${this.pan.x}px, ${this.pan.y}px) scale(${this.zoom})`; }
+
+            addNode(name, x, y) {
+                const def = NODE_DEFINITIONS[name];
+                if (!def) return;
+                const id = 'node_' + Math.random().toString(36).substr(2, 9);
+                let defaultCode = (def.type === 'microchip' || def.type === 'blueprint') ? MICROCHIP_SAFE_CODE.replace('// Microchip logic', `// ${name} logic`) : '// Custom logic here\nreturn input;';
+                if (def.type === 'blueprint_ref') defaultCode = '// Blueprint Reference: outputs raw ref. Must cast to Blueprint type, then store in Object Ref var.';
+                if (name === 'Cast to Blueprint') defaultCode = '// Cast object ref to Blueprint type. Connect result to Set Object Ref to store in var.';
+                if (name === 'Get Object Ref') defaultCode = '// Reads Object Ref variable. Set variableName on node.';
+                if (name === 'Set Object Ref') defaultCode = '// Stores ref in Object Ref variable. Must use Cast result—raw ref does not work.';
+                if (NODE_IMPLEMENTATIONS[name]) defaultCode = `// Built-in: ${name}. Edit to override with custom logic.\nreturn input;`;
+                const node = { id, name, type: def.type, x, y, width: null, height: null, pins: JSON.parse(JSON.stringify(def.pins)), code: defaultCode };
+                if (def.prefabPath !== undefined) node.prefabPath = def.prefabPath;
+                if (def.variableName !== undefined) node.variableName = def.variableName;
+                if (def.blueprintType !== undefined) node.blueprintType = def.blueprintType;
+                if (['Make Float', 'Make Int'].includes(name)) node.defaultValue = 0;
+                if (name === 'Make Bool') node.defaultValue = false;
+                if (name === 'Make String') node.defaultValue = '';
+                this.graphs[this.currentGraph].nodes.push(node);
+                this.render();
+            }
+
+            addReroute(wireId, x, y) {
+                const id = 'reroute_' + Math.random().toString(36).substr(2, 9);
+                this.graphs[this.currentGraph].reroutes.push({ id, wireId, x, y });
+                this.render();
+            }
+
+            createComment() {
+                const id = 'comment_' + Math.random().toString(36).substr(2, 9);
+                const rect = this.container.getBoundingClientRect();
+                const x = (window.innerWidth/2 - rect.left) / this.zoom;
+                const y = (window.innerHeight/2 - rect.top) / this.zoom;
+                this.graphs[this.currentGraph].comments.push({ id, x, y, width: 300, height: 150, text: 'Comment' });
+                this.render();
+            }
+
+            startMarquee(e) {
+                this.isMarquee = true;
+                const rect = this.container.getBoundingClientRect();
+                this.marqueeStart = { x: (e.clientX - rect.left) / this.zoom, y: (e.clientY - rect.top) / this.zoom };
+                const marquee = document.createElement('div');
+                marquee.className = 'marquee';
+                marquee.id = 'active-marquee';
+                this.container.appendChild(marquee);
+            }
+
+            updateMarquee(e) {
+                const marquee = document.getElementById('active-marquee');
+                if (!marquee) return;
+                const rect = this.container.getBoundingClientRect();
+                const currentX = (e.clientX - rect.left) / this.zoom;
+                const currentY = (e.clientY - rect.top) / this.zoom;
+                const left = Math.min(this.marqueeStart.x, currentX);
+                const top = Math.min(this.marqueeStart.y, currentY);
+                marquee.style.left = left + 'px';
+                marquee.style.top = top + 'px';
+                marquee.style.width = Math.abs(currentX - this.marqueeStart.x) + 'px';
+                marquee.style.height = Math.abs(currentY - this.marqueeStart.y) + 'px';
+            }
+
+            finishMarquee() {
+                const marquee = document.getElementById('active-marquee');
+                if (!marquee) return;
+                const marqueeRect = marquee.getBoundingClientRect();
+                this.selection.clear();
+                this.graphs[this.currentGraph].nodes.forEach(node => {
+                    const nodeEl = document.getElementById(node.id);
+                    if (nodeEl) {
+                        const nodeRect = nodeEl.getBoundingClientRect();
+                        if (this.rectsIntersect(marqueeRect, nodeRect)) this.selection.add(node.id);
+                    }
+                });
+                this.updateSelectionUI();
+                marquee.remove();
+                this.isMarquee = false;
+            }
+
+            rectsIntersect(r1, r2) { return !(r2.left > r1.right || r2.right < r1.left || r2.top > r1.bottom || r2.bottom < r1.top); }
+
+            render() {
+                const graph = this.graphs[this.currentGraph];
+                Object.keys(this.monacoEditors).forEach(id => { this.monacoEditors[id]?.dispose(); delete this.monacoEditors[id]; });
+                document.querySelectorAll('.node, .reroute-point, .comment-box').forEach(n => n.remove());
+
+                graph.comments.forEach(comment => {
+                    const el = document.createElement('div');
+                    el.className = 'comment-box';
+                    el.id = comment.id;
+                    el.style.left = comment.x + 'px'; el.style.top = comment.y + 'px';
+                    el.style.width = comment.width + 'px'; el.style.height = comment.height + 'px';
+                    el.innerHTML = `<input type="text" class="comment-label" value="${comment.text}" onchange="editor.updateCommentText('${comment.id}', this.value)">`;
+                    el.addEventListener('mousedown', (e) => { e.stopPropagation(); this.dragTarget = { type: 'comment', id: comment.id }; });
+                    this.container.appendChild(el);
+                });
+
+                graph.nodes.forEach(node => {
+                    const el = document.createElement('div');
+                    el.className = 'node';
+                    el.id = node.id;
+                    el.dataset.type = node.type;
+                    el.style.left = node.x + 'px';
+                    el.style.top = node.y + 'px';
+                    if (node.width) { el.style.width = node.width + 'px'; el.style.minWidth = node.width + 'px'; }
+                    if (node.height) { el.style.height = node.height + 'px'; el.style.minHeight = node.height + 'px'; }
+
+                    let pinsHTML = '<div class="node-content">';
+                    if (node.type === 'blueprint_ref' && node.prefabPath !== undefined) pinsHTML += `<div class="pin-row" style="font-size:0.6rem;color:rgba(255,255,255,0.5);">Prefab: ${node.prefabPath || '—'}</div>`;
+                    if (node.variableName && (node.name === 'Get Object Ref' || node.name === 'Set Object Ref')) pinsHTML += `<div class="pin-row" style="font-size:0.6rem;color:rgba(255,255,255,0.5);">Var: ${node.variableName}</div>`;
+                    if (node.blueprintType !== undefined && node.name === 'Cast to Blueprint') pinsHTML += `<div class="pin-row" style="font-size:0.6rem;color:rgba(255,255,255,0.5);">Type: ${node.blueprintType || '—'}</div>`;
+                    if (node.pins.inputs) node.pins.inputs.forEach(pin => { pinsHTML += `<div class="pin-row input"><div class="pin ${pin.type}" data-node="${node.id}" data-pin="${pin.id}" data-type="in"></div>${pin.label ? `<span class="pin-label">${pin.label}</span>` : ''}</div>`; });
+                    if (node.pins.outputs) node.pins.outputs.forEach(pin => { pinsHTML += `<div class="pin-row output">${pin.label ? `<span class="pin-label">${pin.label}</span>` : ''}<div class="pin ${pin.type}" data-node="${node.id}" data-pin="${pin.id}" data-type="out"></div></div>`; });
+                    pinsHTML += '</div>';
+
+                    let previewHTML = '';
+                    if ((node.type === 'microchip' || node.type === 'blueprint') && this.graphs[node.id]) {
+                        const prev = buildMicrochipPreview(node.id, this.graphs, 160, 48);
+                        previewHTML = prev ? `<div class="microchip-preview">${prev}</div>` : '<div class="microchip-preview microchip-preview-empty">Empty</div>';
+                    } else if (node.type === 'microchip' || node.type === 'blueprint') {
+                        previewHTML = '<div class="microchip-preview microchip-preview-empty">Right-click → Enter to add logic</div>';
+                    }
+
+                    el.innerHTML = `
+                        <div class="node-header"><span>${node.name}</span></div>
+                        ${pinsHTML}
+                        ${previewHTML}
+                        <div class="node-resize-handle"></div>
+                        <div class="editor-container" id="editor_${node.id}"></div>
+                    `;
+
+                    el.addEventListener('mousedown', (e) => {
+                        if (e.target.classList.contains('pin')) this.startWire(e, e.target);
+                        else if (e.target.closest('.node-header') && !e.target.closest('.node-resize-handle')) {
+                            e.stopPropagation();
+                            this.dragTarget = { type: 'node', id: node.id };
+                            if (!e.ctrlKey && !e.shiftKey) this.selection.clear();
+                            this.selection.add(node.id);
+                            this.updateSelectionUI();
+                        }
+                    });
+
+                    this.container.appendChild(el);
+                });
+
+                graph.reroutes.forEach(pt => {
+                    const el = document.createElement('div');
+                    el.className = 'reroute-point';
+                    el.id = pt.id;
+                    el.style.left = pt.x + 'px'; el.style.top = pt.y + 'px';
+                    el.addEventListener('mousedown', (e) => { e.stopPropagation(); this.dragTarget = { type: 'reroute', id: pt.id }; });
+                    this.container.appendChild(el);
+                });
+
+                this.renderWires();
+            }
+
+            getNodeBounds() {
+                const bounds = [];
+                this.graphs[this.currentGraph].nodes.forEach(node => {
+                    const el = document.getElementById(node.id);
+                    if (el) {
+                        const rect = el.getBoundingClientRect();
+                        const cr = this.container.getBoundingClientRect();
+                        bounds.push({ x: (rect.left - cr.left) / this.zoom, y: (rect.top - cr.top) / this.zoom, width: rect.width / this.zoom, height: rect.height / this.zoom, padding: 20 });
+                    }
+                });
+                return bounds;
+            }
+
+            isPointInNode(x, y, bounds) { return bounds.some(b => x >= b.x - b.padding && x <= b.x + b.width + b.padding && y >= b.y - b.padding && y <= b.y + b.height + b.padding); }
+
+            calculateSmartPath(x1, y1, x2, y2, nodeBounds) {
+                if (this.wireStyle === 'curved') {
+                    const dx = Math.abs(x1 - x2) * 0.5;
+                    return `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
+                } else {
+                    const midX = x1 + (x2 - x1) / 2;
+                    const midY = y1 + (y2 - y1) / 2;
+                    const checkPoints = [{x: midX, y: y1}, {x: midX, y: y2}];
+                    let needsReroute = checkPoints.some(pt => this.isPointInNode(pt.x, pt.y, nodeBounds));
+                    if (needsReroute) {
+                        const offset = y1 < y2 ? -30 : 30;
+                        return `M ${x1} ${y1} L ${x1} ${y1 + offset} L ${x2} ${y1 + offset} L ${x2} ${y2}`;
+                    }
+                    return `M ${x1} ${y1} L ${midX} ${y1} L ${midX} ${y2} L ${x2} ${y2}`;
+                }
+            }
+
+            screenToCanvas(x, y) {
+                const cr = this.container.getBoundingClientRect();
+                return { x: (x - cr.left) / this.zoom, y: (y - cr.top) / this.zoom };
+            }
+
+            pinCenterInCanvas(pinEl) {
+                const r = pinEl.getBoundingClientRect();
+                return this.screenToCanvas(r.left + r.width / 2, r.top + r.height / 2);
+            }
+
+            renderWires() {
+                this.svg.innerHTML = '';
+                const graph = this.graphs[this.currentGraph];
+                const nodeBounds = this.getNodeBounds();
+                graph.wires.forEach((w, idx) => {
+                    const wireId = `wire_${idx}`;
+                    const fromPin = document.querySelector(`[data-node="${w.from}"][data-pin="${w.fromPin}"][data-type="out"]`);
+                    const toPin = document.querySelector(`[data-node="${w.to}"][data-pin="${w.toPin}"][data-type="in"]`);
+                    if (!fromPin || !toPin) return;
+                    const p1 = this.pinCenterInCanvas(fromPin);
+                    const p2 = this.pinCenterInCanvas(toPin);
+                    let x1 = p1.x, y1 = p1.y, x2 = p2.x, y2 = p2.y;
+                    const points = graph.reroutes.filter(p => p.wireId === wireId);
+                    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                    path.setAttribute("class", "wire");
+                    path.dataset.wireId = wireId;
+                    if (points.length === 0) path.setAttribute("d", this.calculateSmartPath(x1, y1, x2, y2, nodeBounds));
+                    else {
+                        let d = `M ${x1} ${y1}`;
+                        points.forEach(p => { d += ` L ${p.x} ${p.y}`; });
+                        d += ` L ${x2} ${y2}`;
+                        path.setAttribute("d", d);
+                    }
+                    this.svg.appendChild(path);
+                });
+            }
+
+            handleDrag(e) {
+                if (this.dragTarget?.type === 'node') {
+                    this.selection.forEach(nodeId => {
+                        const node = this.graphs[this.currentGraph].nodes.find(n => n.id === nodeId);
+                        if (node) { node.x += e.movementX / this.zoom; node.y += e.movementY / this.zoom; const el = document.getElementById(node.id); if (el) { el.style.left = node.x + 'px'; el.style.top = node.y + 'px'; } }
+                    });
+                    this.renderWires();
+                } else if (this.dragTarget?.type === 'reroute') {
+                    const rect = this.container.getBoundingClientRect();
+                    const pt = this.graphs[this.currentGraph].reroutes.find(p => p.id === this.dragTarget.id);
+                    if (pt) { pt.x = (e.clientX - rect.left) / this.zoom; pt.y = (e.clientY - rect.top) / this.zoom; this.render(); }
+                } else if (this.dragTarget?.type === 'comment') {
+                    const comment = this.graphs[this.currentGraph].comments.find(c => c.id === this.dragTarget.id);
+                    if (comment) { comment.x += e.movementX / this.zoom; comment.y += e.movementY / this.zoom; const el = document.getElementById(comment.id); if (el) { el.style.left = comment.x + 'px'; el.style.top = comment.y + 'px'; } }
+                }
+            }
+
+            startWire(e, pin) {
+                e.stopPropagation();
+                const p = this.pinCenterInCanvas(pin);
+                this.activeWire = { startX: p.x, startY: p.y, fromNode: pin.dataset.node, fromPin: pin.dataset.pin, fromType: pin.dataset.type, el: document.createElementNS("http://www.w3.org/2000/svg", "path") };
+                this.activeWire.el.setAttribute("class", "wire opacity-50");
+                this.svg.appendChild(this.activeWire.el);
+            }
+
+            updateWireDrag(e) {
+                const p = this.screenToCanvas(e.clientX, e.clientY);
+                const x2 = p.x, y2 = p.y;
+                this.activeWire.el.setAttribute("d", this.calculateSmartPath(this.activeWire.startX, this.activeWire.startY, x2, y2, this.getNodeBounds()));
+            }
+
+            finalizeWire(e) {
+                const ev = e || (typeof window !== 'undefined' && window.event);
+                const cx = ev?.clientX ?? 0, cy = ev?.clientY ?? 0;
+                this.activeWire.el.style.pointerEvents = 'none';
+                const hoveredPin = document.elementFromPoint(cx, cy)?.closest('.pin');
+                this.activeWire.el.style.pointerEvents = '';
+                const canConnect = hoveredPin && hoveredPin.dataset.node !== this.activeWire.fromNode && hoveredPin.dataset.type !== this.activeWire.fromType && (this.activeWire.fromType === 'out' && hoveredPin.dataset.type === 'in');
+                if (canConnect) {
+                    this.graphs[this.currentGraph].wires.push({ from: this.activeWire.fromNode, fromPin: this.activeWire.fromPin, to: hoveredPin.dataset.node, toPin: hoveredPin.dataset.pin });
+                }
+                this.activeWire.el.remove();
+                this.activeWire = null;
+                this.renderWires();
+            }
+
+            showSearch(x, y) {
+                const search = document.getElementById('node-search');
+                search.style.display = 'block';
+                search.style.left = x + 'px';
+                search.style.top = y + 'px';
+                const rect = this.container.getBoundingClientRect();
+                this.spawnPos = { x: (x - rect.left) / this.zoom, y: (y - rect.top) / this.zoom };
+                document.getElementById('search-input').value = '';
+                document.getElementById('search-input').focus();
+                this.filterSearch('');
+            }
+
+            filterSearch(query) {
+                const results = document.getElementById('search-results');
+                results.innerHTML = '';
+                const sp = this.spawnPos || { x: 300, y: 300 };
+                NODE_LIBRARY.filter(n => n.name.toLowerCase().includes(query.toLowerCase())).forEach(n => {
+                    const item = document.createElement('div');
+                    item.className = 'search-item';
+                    item.innerHTML = `<strong>${n.name}</strong> <span class="opacity-50 text-xs">${n.type}</span>`;
+                    item.onclick = () => {
+                        this.addNode(n.name, sp.x, sp.y);
+                        document.getElementById('node-search').style.display = 'none';
+                    };
+                    results.appendChild(item);
+                });
+            }
+
+            showContextMenu(e) {
+                const menu = document.getElementById('context-menu');
+                menu.style.display = 'block';
+                menu.style.left = e.clientX + 'px';
+                menu.style.top = e.clientY + 'px';
+                this.contextMenuPos = { x: e.clientX, y: e.clientY };
+            }
+
+            showNodeMenu(e, nodeId) {
+                const menu = document.getElementById('node-menu');
+                const node = this.graphs[this.currentGraph].nodes.find(n => n.id === nodeId);
+                const btnEnter = document.getElementById('btn-enter-microchip');
+                if (btnEnter) btnEnter.style.display = (node?.type === 'microchip' || node?.type === 'blueprint') ? '' : 'none';
+                menu.style.display = 'block';
+                menu.style.left = e.clientX + 'px';
+                menu.style.top = e.clientY + 'px';
+                this.selectedNodeId = nodeId;
+            }
+
+            toggleNodeEditor(nodeId) {
+                const node = this.graphs[this.currentGraph].nodes.find(n => n.id === nodeId);
+                if (!node) return;
+                const container = document.getElementById(`editor_${nodeId}`);
+                const isExpanded = container?.classList.contains('expanded');
+                if (isExpanded) {
+                    container.classList.remove('expanded', 'mini', 'full');
+                    container.innerHTML = '';
+                    if (this.monacoEditors[nodeId]) { this.monacoEditors[nodeId].dispose(); delete this.monacoEditors[nodeId]; }
+                } else {
+                    const size = node.editorSize || 'mini';
+                    container.classList.add('expanded', size);
+                    container.innerHTML = `<div class="editor-toolbar">
+                        <button class="glass-btn expand-toggle" title="${size === 'full' ? 'Contract to mini' : 'Expand to full'}" style="padding:2px 6px;font-size:0.65rem;">${size === 'full' ? '⊟ Contract' : '⊞ Expand'}</button>
+                    </div><div class="monaco-wrap" style="flex:1;min-height:60px;"></div>`;
+                    const monacoWrap = container.querySelector('.monaco-wrap');
+                    require(['vs/editor/editor.main'], () => {
+                        this.monacoEditors[nodeId] = monaco.editor.create(monacoWrap, { value: node.code, language: 'javascript', theme: 'vs-dark', minimap: { enabled: false }, fontSize: 11, automaticLayout: true });
+                        this.monacoEditors[nodeId].onDidChangeModelContent(() => { node.code = this.monacoEditors[nodeId].getValue(); });
+                        container.querySelector('.expand-toggle').onclick = () => {
+                            const nowFull = container.classList.contains('full');
+                            container.classList.toggle('mini', nowFull);
+                            container.classList.toggle('full', !nowFull);
+                            node.editorSize = nowFull ? 'mini' : 'full';
+                            container.querySelector('.expand-toggle').textContent = nowFull ? '⊞ Expand' : '⊟ Contract';
+                            container.querySelector('.expand-toggle').title = nowFull ? 'Expand to full' : 'Contract to mini';
+                            this.layoutInlineMonaco(nodeId);
+                        };
+                    });
+                }
+            }
+
+            enterMicrochip(nodeId) {
+                const node = this.graphs[this.currentGraph].nodes.find(n => n.id === nodeId);
+                if (!node || (node.type !== 'microchip' && node.type !== 'blueprint')) return;
+                const safeCode = MICROCHIP_SAFE_CODE.replace('// Microchip logic', `// ${node.name} logic`);
+                if (!this.graphs[nodeId]) this.graphs[nodeId] = { nodes: [], wires: [], reroutes: [], comments: [], pan: { x: 0, y: 0 }, code: safeCode, codeLua: null, codeLanguage: 'javascript', svgDefs: DEFAULT_SVG_DEFS };
+                if (this.viewMode === 'monaco') this.closeFullscreenEditor();
+                this.graphs[this.currentGraph].pan = { ...this.pan };
+                this.currentGraph = nodeId;
+                this.pan = { ...this.graphs[nodeId].pan };
+                this.updateView();
+                this.render();
+                this.updateBreadcrumbs();
+                if (this.viewMode === 'monaco') this.openFullscreenEditor();
+            }
+
+            updateBreadcrumbs() {
+                const breadcrumbs = document.getElementById('breadcrumbs');
+                breadcrumbs.innerHTML = '';
+                const createCrumb = (label, graphId) => {
+                    const crumb = document.createElement('span');
+                    crumb.className = 'breadcrumb';
+                    crumb.textContent = label;
+                    crumb.dataset.graph = graphId;
+                    if (graphId === this.currentGraph) crumb.classList.add('active');
+                    crumb.addEventListener('click', () => {
+                        if (this.viewMode === 'monaco') this.closeFullscreenEditor();
+                        this.graphs[this.currentGraph].pan = { ...this.pan };
+                        this.currentGraph = graphId;
+                        this.pan = { ...this.graphs[graphId].pan };
+                        this.updateView();
+                        this.render();
+                        this.updateBreadcrumbs();
+                        if (this.viewMode === 'monaco') this.openFullscreenEditor();
+                    });
+                    return crumb;
+                };
+                breadcrumbs.appendChild(createCrumb('Root', 'root'));
+                if (this.currentGraph !== 'root') {
+                    const node = this.findNodeRecursive('root', this.currentGraph);
+                    if (node) { breadcrumbs.appendChild(document.createTextNode(' > ')); breadcrumbs.appendChild(createCrumb(node.name, this.currentGraph)); }
+                }
+            }
+
+            findNodeRecursive(graphId, targetId) {
+                const graph = this.graphs[graphId];
+                const found = graph.nodes.find(n => n.id === targetId);
+                if (found) return found;
+                for (const node of graph.nodes) {
+                    if (this.graphs[node.id]) { const result = this.findNodeRecursive(node.id, targetId); if (result) return result; }
+                }
+                return null;
+            }
+
+            deleteNode(nodeId) {
+                this.graphs[this.currentGraph].nodes = this.graphs[this.currentGraph].nodes.filter(n => n.id !== nodeId);
+                this.graphs[this.currentGraph].wires = this.graphs[this.currentGraph].wires.filter(w => w.from !== nodeId && w.to !== nodeId);
+                this.selection.delete(nodeId);
+                this.render();
+            }
+
+            deleteSelection() {
+                this.selection.forEach(id => {
+                    this.graphs[this.currentGraph].nodes = this.graphs[this.currentGraph].nodes.filter(n => n.id !== id);
+                    this.graphs[this.currentGraph].wires = this.graphs[this.currentGraph].wires.filter(w => w.from !== id && w.to !== id);
+                });
+                this.selection.clear();
+                this.render();
+            }
+
+            copySelection() { this.clipboard = []; this.selection.forEach(id => { const node = this.graphs[this.currentGraph].nodes.find(n => n.id === id); if (node) this.clipboard.push(JSON.parse(JSON.stringify(node))); }); }
+
+            pasteClipboard() {
+                if (this.clipboard.length === 0) return;
+                this.selection.clear();
+                this.clipboard.forEach(node => {
+                    const newId = 'node_' + Math.random().toString(36).substr(2, 9);
+                    const newNode = { ...node, id: newId, x: node.x + 50, y: node.y + 50 };
+                    this.graphs[this.currentGraph].nodes.push(newNode);
+                    this.selection.add(newId);
+                });
+                this.render();
+                this.updateSelectionUI();
+            }
+
+            updateSelectionUI() { document.querySelectorAll('.node').forEach(n => n.classList.toggle('selected', this.selection.has(n.id))); }
+
+            updateCommentText(commentId, text) { const comment = this.graphs[this.currentGraph].comments.find(c => c.id === commentId); if (comment) comment.text = text; }
+
+            switchViewMode(mode) {
+                this.viewMode = mode;
+                if (mode === 'monaco') this.openFullscreenEditor();
+                else this.closeFullscreenEditor();
+            }
+
+            getContentForTab(tabId) {
+                const graph = this.graphs[this.currentGraph];
+                if (!graph) return '';
+                if (tabId === 'graph') return graph.code || '// Graph code';
+                if (tabId === 'svgDefs') return graph.svgDefs || DEFAULT_SVG_DEFS;
+                const node = graph.nodes.find(n => n.id === tabId);
+                return node?.code || '// Node code';
+            }
+
+            setContentForTab(tabId, val) {
+                const graph = this.graphs[this.currentGraph];
+                if (!graph) return;
+                if (tabId === 'graph') graph.code = val;
+                else if (tabId === 'svgDefs') graph.svgDefs = val;
+                else {
+                    const node = graph.nodes.find(n => n.id === tabId);
+                    if (node) node.code = val;
+                }
+            }
+
+            buildCodeTabs() {
+                const graph = this.graphs[this.currentGraph];
+                const tabsEl = document.getElementById('editor-tabs');
+                if (!tabsEl) return;
+                tabsEl.innerHTML = '';
+                const addTab = (id, label) => {
+                    const t = document.createElement('button');
+                    t.className = 'editor-tab' + (this.activeCodeTab === id ? ' active' : '');
+                    t.textContent = label;
+                    t.dataset.tab = id;
+                    t.onclick = () => this.switchCodeTab(id);
+                    tabsEl.appendChild(t);
+                };
+                addTab('graph', 'Graph');
+                (graph.nodes || []).forEach(n => addTab(n.id, n.name));
+                addTab('svgDefs', 'SVG Defs');
+            }
+
+            switchCodeTab(tabId) {
+                if (this.activeCodeTab === tabId) return;
+                if (this.fullscreenEditor) this.setContentForTab(this.activeCodeTab, this.fullscreenEditor.getValue());
+                this.activeCodeTab = tabId;
+                const content = this.getContentForTab(tabId);
+                const transpileArea = document.getElementById('transpile-area');
+                if (transpileArea) transpileArea.style.display = (tabId === 'graph' && this.editorCodeLanguage === 'lua') ? 'flex' : 'none';
+                if (this.fullscreenEditor) {
+                    this.fullscreenEditor.setValue(content);
+                    const lang = tabId === 'svgDefs' ? 'xml' : this.editorCodeLanguage;
+                    const m = this.fullscreenEditor.getModel(); if (m) monaco.editor.setModelLanguage(m, lang);
+                }
+                document.querySelectorAll('#editor-tabs .editor-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tabId));
+            }
+
+            async openFullscreenEditor() {
+                const graph = this.graphs[this.currentGraph];
+                const fullscreenEl = document.getElementById('fullscreen-editor');
+                const editorBody = document.getElementById('fullscreen-editor-body');
+                const titleEl = document.getElementById('editor-title');
+                const langDropdown = document.getElementById('editor-lang-dropdown');
+                const transpileArea = document.getElementById('transpile-area');
+                const tabsToggle = document.getElementById('editor-tabs-toggle');
+                if (!graph.code) graph.code = '// Graph code\nfunction execute() {\n  console.log("Graph executing");\n}\n';
+                if (!graph.svgDefs) graph.svgDefs = DEFAULT_SVG_DEFS;
+                const graphName = this.currentGraph === 'root' ? 'Root' : this.findNodeRecursive('root', this.currentGraph)?.name || 'Unknown';
+                titleEl.textContent = `Editing: ${graphName}`;
+                fullscreenEl.classList.add('active');
+                this.activeCodeTab = 'graph';
+                this.buildCodeTabs();
+                const tabsEl = document.getElementById('editor-tabs');
+                if (tabsEl) tabsEl.classList.toggle('hidden', !tabsToggle?.checked);
+                if (this.fullscreenEditor) this.fullscreenEditor.dispose();
+                this.editorCodeLanguage = graph.codeLanguage || langDropdown?.value || 'javascript';
+                if (langDropdown) langDropdown.value = this.editorCodeLanguage;
+                transpileArea.style.display = this.editorCodeLanguage === 'lua' ? 'flex' : 'none';
+                require(['vs/editor/editor.main'], async () => {
+                    let initialValue = this.getContentForTab('graph');
+                    if (this.editorCodeLanguage === 'lua' && this.activeCodeTab === 'graph') {
+                        if (graph.codeLua) initialValue = graph.codeLua;
+                        else {
+                            const lua = await transpileJsToLua(graph.code);
+                            if (lua) { graph.codeLua = lua; initialValue = lua; }
+                        }
+                    }
+                    const lang = this.activeCodeTab === 'svgDefs' ? 'xml' : this.editorCodeLanguage;
+                    this.fullscreenEditor = monaco.editor.create(editorBody, {
+                        value: initialValue,
+                        language: lang,
+                        theme: 'vs-dark',
+                        fontSize: 13,
+                        automaticLayout: true,
+                        minimap: { enabled: true }
+                    });
+                    this.fullscreenEditor.onDidChangeModelContent(() => this.syncEditorContent());
+                });
+            }
+
+            async switchEditorLanguage(lang) {
+                const graph = this.graphs[this.currentGraph];
+                const transpileArea = document.getElementById('transpile-area');
+                if (!this.fullscreenEditor) return;
+                const currentValue = this.fullscreenEditor.getValue();
+                if (lang === 'lua') {
+                    transpileArea.style.display = 'flex';
+                    if (this.editorCodeLanguage === 'javascript' || this.editorCodeLanguage === 'typescript') {
+                        graph.code = currentValue;
+                        const lua = await transpileJsToLua(graph.code);
+                        if (lua) { graph.codeLua = lua; this.fullscreenEditor.setValue(lua); }
+                        else this.fullscreenEditor.setValue('-- Could not convert JS/TS to Lua. Edit in JS/TS mode or simplify code.\n-- ' + graph.code.replace(/\n/g, '\n-- '));
+                    }
+                    const m = this.fullscreenEditor.getModel(); if (m) monaco.editor.setModelLanguage(m, 'lua');
+                } else {
+                    transpileArea.style.display = 'none';
+                    if (this.editorCodeLanguage === 'lua') {
+                        graph.codeLua = currentValue;
+                        const js = await transpileLuaToJs(graph.codeLua);
+                        if (js) { graph.code = js; this.fullscreenEditor.setValue(js); }
+                        else this.fullscreenEditor.setValue(graph.code || '// Lua conversion failed');
+                    }
+                    const m = this.fullscreenEditor.getModel(); if (m) monaco.editor.setModelLanguage(m, lang);
+                }
+                this.editorCodeLanguage = lang;
+                graph.codeLanguage = lang;
+            }
+
+            syncEditorContent() {
+                clearTimeout(this._syncDebounce);
+                this._syncDebounce = setTimeout(() => {
+                    if (!this.fullscreenEditor) return;
+                    const val = this.fullscreenEditor.getValue();
+                    const tabId = this.activeCodeTab;
+                    if (tabId === 'graph' && this.editorCodeLanguage === 'lua') {
+                        const graph = this.graphs[this.currentGraph];
+                        transpileLuaToJs(val).then(res => { if (res) { graph.code = res; graph.codeLua = val; } });
+                    } else {
+                        this.setContentForTab(tabId, val);
+                    }
+                }, 300);
+            }
+
+            closeFullscreenEditor() {
+                if (this.fullscreenEditor) {
+                    this.setContentForTab(this.activeCodeTab, this.fullscreenEditor.getValue());
+                    this.fullscreenEditor.dispose();
+                    this.fullscreenEditor = null;
+                }
+                document.getElementById('fullscreen-editor').classList.remove('active');
+                document.getElementById('mode-dropdown').value = 'visual';
+                this.viewMode = 'visual';
+            }
+
+            getExecWires(graph) {
+                const wires = graph.wires || [];
+                return wires.filter(w => {
+                    const fromNode = graph.nodes.find(n => n.id === w.from);
+                    const toNode = graph.nodes.find(n => n.id === w.to);
+                    const fromPin = fromNode?.pins?.outputs?.find(p => p.id === w.fromPin);
+                    const toPin = toNode?.pins?.inputs?.find(p => p.id === w.toPin);
+                    return fromPin?.type === 'exec' && toPin?.type === 'exec';
+                });
+            }
+
+            getExecOrder(graph) {
+                const execWires = this.getExecWires(graph);
+                const nodes = graph.nodes || [];
+                const eventNodes = nodes.filter(n => n.type === 'event');
+                const triggered = {}; execWires.forEach(w => { triggered[w.to] = triggered[w.to] || []; triggered[w.to].push(w.from); });
+                const levels = [];
+                const done = new Set();
+                let frontier = eventNodes.map(n => n.id);
+                while (frontier.length) {
+                    levels.push([...frontier]);
+                    frontier.forEach(id => done.add(id));
+                    const next = new Set();
+                    frontier.forEach(fromId => {
+                        execWires.filter(w => w.from === fromId).forEach(w => {
+                            const deps = triggered[w.to] || [];
+                            if (deps.every(d => done.has(d)) && !done.has(w.to)) next.add(w.to);
+                        });
+                    });
+                    frontier = [...next];
+                }
+                return levels;
+            }
+
+            getPinValue(nodeId, pinId, ctx) {
+                const graph = this.graphs[this.currentGraph];
+                const node = graph.nodes.find(n => n.id === nodeId);
+                const wire = (graph.wires || []).find(w => w.to === nodeId && w.toPin === pinId);
+                if (!wire) {
+                    if (node?.defaultValue !== undefined) return node.defaultValue;
+                    if (node?.name === 'Make Float' && pinId === 'value') return node.defaultValue ?? 0;
+                    if (node?.name === 'Make Int' && pinId === 'value') return node.defaultValue ?? 0;
+                    if (node?.name === 'Make Bool' && pinId === 'value') return node.defaultValue ?? false;
+                    if (node?.name === 'Make String' && pinId === 'value') return node.defaultValue ?? '';
+                    return undefined;
+                }
+                return this.evaluateNode(wire.from, wire.fromPin, ctx);
+            }
+
+            evaluateNode(nodeId, outputPinId, ctx) {
+                const graph = this.graphs[this.currentGraph];
+                const node = graph.nodes.find(n => n.id === nodeId);
+                if (!node) return undefined;
+                if (node.name === 'Create Vehicle' && outputPinId === 'vehicle') return node._lastVehicle ?? null;
+                const impl = NODE_IMPLEMENTATIONS[node.name];
+                if (impl) {
+                    const def = NODE_DEFINITIONS[node.name];
+                    const inputs = (def?.pins?.inputs || []).filter(p => p.type !== 'exec');
+                    const args = inputs.map(p => this.getPinValue(nodeId, p.id, ctx));
+                    return impl(...args);
+                }
+                const outPin = node.pins?.outputs?.find(p => p.id === outputPinId);
+                if (outPin?.type === 'float') return 0;
+                if (outPin?.type === 'bool') return false;
+                if (outPin?.type === 'string') return '';
+                return undefined;
+            }
+
+            async executeGraph() {
+                const graph = this.graphs[this.currentGraph];
+                if (!graph?.nodes?.length) { console.log('[Nexus] No nodes to execute'); return; }
+                const levels = this.getExecOrder(graph);
+                const nodeMap = {};
+                graph.nodes.forEach(n => { nodeMap[n.id] = n; });
+                const scene = window.__basaltScene ?? this.scene ?? null;
+                const ctx = { graph, nodeMap, scene, getPinValue: (nid, pid) => this.getPinValue(nid, pid, ctx), evaluateNode: (nid, pid) => this.evaluateNode(nid, pid, ctx) };
+                const runNode = async (nodeId) => {
+                    const node = nodeMap[nodeId];
+                    if (!node) return;
+                    const impl = NODE_IMPLEMENTATIONS[node.name];
+                    if (impl && node.pins?.inputs?.some(p => p.type === 'exec')) {
+                        if (node.name === 'Print String') {
+                            const s = this.getPinValue(nodeId, 'string', ctx);
+                            console.log('[Nexus]', String(s ?? ''));
+                        } else if (node.name === 'Create Vehicle') {
+                            const loc = this.getPinValue(nodeId, 'location', ctx);
+                            const pos = (loc && typeof loc === 'object' && 'x' in loc) ? loc : { x: 0, y: 5, z: 0 };
+                            if (scene && typeof BABYLON !== 'undefined') {
+                                try {
+                                    const mod = await import('../Vehicle/vehicle-component.js');
+                                    const v = await mod.createVehicle(scene, { position: pos });
+                                    node._lastVehicle = v;
+                                } catch (e) { console.warn('[Nexus] Create Vehicle failed:', e); node._lastVehicle = null; }
+                            } else node._lastVehicle = null;
+                        } else if (node.name === 'Set Vehicle Input') {
+                            const vehicle = this.getPinValue(nodeId, 'vehicle', ctx);
+                            const fwd = Number(this.getPinValue(nodeId, 'fwd', ctx)) || 0;
+                            const side = Number(this.getPinValue(nodeId, 'side', ctx)) || 0;
+                            if (vehicle?.setInput) vehicle.setInput(fwd, side);
+                        }
+                        return;
+                    }
+                    if (node.name === 'Branch') {
+                        const cond = this.getPinValue(nodeId, 'condition', ctx);
+                        return;
+                    }
+                    if ((node.type === 'microchip' || node.type === 'blueprint') && node.code) {
+                        try {
+                            const fn = new Function('ctx', 'input', node.code + '\nreturn typeof run === "function" ? run(ctx) : (typeof execute === "function" ? execute(ctx) : undefined);');
+                            fn(ctx, null);
+                        } catch (e) { console.warn('[Nexus] Node exec error:', node?.name, e); }
+                    }
+                };
+                if (this.execMode === 'sequential') {
+                    for (const level of levels) {
+                        for (const id of level) await runNode(id);
+                    }
+                } else {
+                    for (const level of levels) {
+                        await Promise.all(level.map(id => runNode(id)));
+                    }
+                }
+            }
+        }
+
+        const editor = new NexusEditor();
+    </script>
+</body>
+</html>
