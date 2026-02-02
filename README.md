@@ -24,9 +24,10 @@
 
 ---
 
-**Basalt** is the modern web engine — high-fidelity WebGPU (via Babylon.js), Hammer-style workflow, mesh-based editing. Built for developers who want desktop-class rendering in the browser without the bloat.
+**Basalt** is the modern web engine — high-fidelity WebGPU+Havok, Hammer-style workflow, Built for developers who want desktop-class rendering in the browser without the bloat.
 
-The **IronWill Pipeline** transforms Blender into a professional-grade map editor, entity manager, and logic sequencer — one workflow, no fragmented tools.
+The **IronWill Pipeline** Aims to Make The Path Between Blender and Game Engines Super Easy to Cross With little to No Bloat and Very Little if Any Overhead.
+Its Ultimate Goal is to bring The Power and Main Modern Features From Other Game Engines into Its worflow making the Best Of All Worlds Engine that Utilized Ideas From Existing Systems And Builds Upon them Sufficiently.
 
 ---
 ## Why Basalt? Why Not Babylon Editor?
