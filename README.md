@@ -42,7 +42,7 @@ We use **Babylon.js** for rendering and physics — it's excellent. But we built
 | **Full control** | We own the editor UX. Tailor panels, variables, weapon tables to game dev, not generic 3D. |
 | **Web-first** | Runs in browser. No desktop install. Share a link, and it works. |
 | **Mesh-based** | No BSP brushes. Modern glTF pipeline. Sculpt in Blender, export, play. |
-| **Native path** | Babylon Native fork test (coming soon Feb 10th) — same engine, desktop build. Babylon Editor is a separate product. |
+| **Native path** | Basalt Native fork test (coming soon Feb 10th) — same engine, desktop build. Babylon Editor is a separate product. |
 
 **Babylon Editor** is a great general-purpose editor. Basalt is **AAA game-engine focused around Blender Heavy Worflows and Pipelines** — FPS templates, weapon systems, IronWill schema, Blender integration. Different goals, different tools.
 
