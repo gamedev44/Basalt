@@ -1,6 +1,4 @@
-<!DOCTYPE html>
-<html>
-<head>
+<!DOCTYPE html><html><head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Basalt — Play</title>
@@ -14,10 +12,7 @@
         #ui-overlay { display: none !important; }
         .ui-btn { background: rgba(45, 45, 45, 0.8); color: white; border: 1px solid #555; padding: 8px 12px; cursor: pointer; font-size: 12px; border-radius: 4px; text-align: center; user-select: none; }
         .ui-btn:hover { background: rgba(80, 80, 80, 0.9); }
-
-        #crosshair-overlay {
-            position: absolute; inset: 0; pointer-events: none; display: flex; align-items: center; justify-content: center; z-index: 10;
-        }
+        #crosshair-overlay { position: absolute; inset: 0; pointer-events: none; display: flex; align-items: center; justify-content: center; z-index: 10; }
         #crosshair-flexer {
             --sway-x: 0px; --sway-y: 0px; --gap: 24px; --len: 18px; --thick: 2px;
             position: relative; display: flex; align-items: center; justify-content: center;
@@ -34,8 +29,7 @@
         .ch-bar.left { left: calc(-1 * (var(--gap) / 2 + var(--len))); top: 50%; transform: translateY(-50%); }
         .ch-bar.right { right: calc(-1 * (var(--gap) / 2 + var(--len))); top: 50%; transform: translateY(-50%); }
     </style>
-</head>
-<body>
+</head><body>
     <canvas id="renderCanvas"></canvas>
     <div id="ui-overlay">
         <a href="Editor_Layout.html" class="ui-btn">Editor Layout</a>
@@ -58,49 +52,80 @@
         const MAP_SIZE = 80;
         const PLAYER_HEIGHT = 1.7;
         const BASE_HEAD_POS = new BABYLON.Vector3(-0.03, 0.04, -0.24);
-        const ADS_HEAD_POS = new BABYLON.Vector3(-0.10, 0.07, 0.1);
+        const ADS_HEAD_POS  = new BABYLON.Vector3(-0.10, 0.07, 0.1);
         const CAM_GLOBAL_OFFSET = new BABYLON.Vector3(0, 0, 0);
-        const WALK_SPEED = 0.12;
+        const WALK_SPEED   = 0.12;
         const SPRINT_SPEED = 0.22;
-        const JUMP_FORCE = 0.15;
-        const GRAVITY = -0.008;
-        const AIR_DRAG = 0.98;
+        const JUMP_FORCE   = 0.15;
+        const GRAVITY      = -0.008;
+        const AIR_DRAG     = 0.98;
         const AIR_ACCELERATION = 0.4;
-        const GROUND_FRICTION = 0.85;
-        const APEX_THRESHOLD = 0.02;
+        const GROUND_FRICTION  = 0.85;
+        const APEX_THRESHOLD   = 0.02;
         const APEX_GRAVITY_MULT = 0.5;
-        const BULLET_EMITTER_OFFSET = new BABYLON.Vector3(0, 0, 0);
+        const BULLET_EMITTER_OFFSET     = new BABYLON.Vector3(0, 0, 0);
         const BULLET_EMITTER_ADS_OFFSET = new BABYLON.Vector3(0, 0, 0);
-        const FIRE_RATE = 100;
-        const RECOIL_STRENGTH_UP = -0.01;
+        const FIRE_RATE          = 100;
+        const RECOIL_STRENGTH_UP   = -0.01;
         const RECOIL_STRENGTH_BACK = -0.04;
-        const RECOIL_STRENGTH_SIDE = 0;
-        const RECOIL_RECOVERY = 0.15;
+        const RECOIL_STRENGTH_SIDE =  0;
+        const RECOIL_RECOVERY      =  0.15;
 
-        const CROSSHAIR_BOB_SPEED = 4.2;
-        const CROSSHAIR_BOB_AMOUNT_WALK = 2.5;
+        const CROSSHAIR_BOB_SPEED         = 4.2;
+        const CROSSHAIR_BOB_AMOUNT_WALK   = 2.5;
         const CROSSHAIR_BOB_AMOUNT_SPRINT = 5;
-        const CROSSHAIR_BASE_GAP = 24;
-        const CROSSHAIR_WALK_GAP = 40;
+        const CROSSHAIR_BASE_GAP   = 24;
+        const CROSSHAIR_WALK_GAP   = 40;
         const CROSSHAIR_SPRINT_GAP = 80;
-        const CROSSHAIR_RECOIL_BLOOM = 15;
-        const CROSSHAIR_SWAY_SCALE = 200;
+        const CROSSHAIR_RECOIL_BLOOM   = 15;
+        const CROSSHAIR_SWAY_SCALE     = 200;
         const CROSSHAIR_SWAY_INFLUENCE = 0.5;
 
+        // ─── WEAPONS ────────────────────────────────────────────────────────────
+        // Full-body GLB meshes (UE5.5 / UEFN skeletons).
+        // Google Drive "view" links converted to direct-download format so
+        // Babylon's SceneLoader can stream them without a redirect page.
+        // The pluginExtension ".glb" is passed explicitly because the URL has
+        // no file extension, which would otherwise confuse the loader.
         var WEAPONS = [
-            { url: "https://dl.dropbox.com/s/wbia4zetn1bdeze/", file: "arms_assault_rifle_02.glb", hideList: ["knife", "assault_rifle_02_iron_sights", "bullet", "scope_01", "scope_02", "scope_03", "silencer"] },
-            { url: "https://dl.dropbox.com/s/axejnxioiwq155l/", file: "arms_handgun_01.glb", hideList: ["knife", "scope_02", "scope_03", "silencer"] }
+            {
+                url:      "https://drive.google.com/uc?export=download&confirm=t&id=1mAJOCp9Sel46r2ip07g3OQV2kOfn1CN9",
+                hideList: [],
+                name:     "Character 1"
+            },
+            {
+                url:      "https://drive.google.com/uc?export=download&confirm=t&id=1VjAAgEfQ-AjJFEVOyj8IrrevUp1M4NmP",
+                hideList: [],
+                name:     "Character 2"
+            },
+            {
+                url:      "https://drive.google.com/uc?export=download&confirm=t&id=1TeoBYvbI6V_UvejC21m0eRas9LkBGg3l",
+                hideList: [],
+                name:     "Character 3"
+            },
+            {
+                url:      "https://drive.google.com/uc?export=download&confirm=t&id=1p7Q14cenxXZEW48M3pBbOgQIqxsifCh-",
+                hideList: [],
+                name:     "Character 4"
+            }
         ];
+        // ────────────────────────────────────────────────────────────────────────
 
-        var player, keys = { left: 0, right: 0, forward: 0, back: 0, shift: 0, jump: 0, weapon1: 0, weapon2: 0, scrollUp: 0, scrollDown: 0 };
+        var player, keys = {
+            left: 0, right: 0, forward: 0, back: 0,
+            shift: 0, jump: 0,
+            weapon1: 0, weapon2: 0, weapon3: 0, weapon4: 0,
+            scrollUp: 0, scrollDown: 0
+        };
         var isAds = false, verticalVelocity = 0, isGrounded = true;
         var velocityXZ = new BABYLON.Vector3(0, 0, 0), airMaxSpeed = 0;
         var jumpCount = 0, bulletCount = 0, isFiring = false, lastFireTime = 0;
         var currentRecoilPos = new BABYLON.Vector3(0, 0, 0);
-        var weaponSlot = 0, weaponRoot = null, currentIdle = null, currentWalk = null, cameraNode = null;
+        var weaponSlot = 0, weaponRoot = null, currentIdle = null, currentWalk = null;
+        var cameraNode = null, headTracker = null;
         var statsText, scene;
-        var bobPhase = 0;
-        var recoilBloom = 0;
+        var bobPhase = 0, recoilBloom = 0;
+        var TOTAL_WEAPONS = WEAPONS.length;
 
         function updateCrosshairHTML(isMoving, isSprinting, isFiring, isAds, recoilX, recoilY, deltaTime) {
             var flexer = document.getElementById("crosshair-flexer");
@@ -142,16 +167,20 @@
             ground.material = mat1;
             ground.checkCollisions = true;
 
+            // head anchor — used as camera eye-point when no head bone is found
             var head = BABYLON.MeshBuilder.CreateSphere("headAnchor", { diameter: 0.05 }, scene, true);
-            head.material = new BABYLON.StandardMaterial("headMat", scene);
-            head.material.diffuseColor = new BABYLON.Color3(1, 0, 0);
             head.isVisible = false;
+            var headMat = new BABYLON.StandardMaterial("headMat", scene);
+            headMat.diffuseColor = new BABYLON.Color3(1, 0, 0);
+            head.material = headMat;
 
             var box = BABYLON.MeshBuilder.CreateBox("targetBox", { size: 1 }, scene);
             box.isVisible = false;
             for (var i = 0; i < MAP_SIZE / 2; i++) {
                 var inst = box.createInstance('targetInstance_' + i);
-                inst.position = new BABYLON.Vector3(Math.floor(Math.random() * MAP_SIZE) - MAP_SIZE / 2, 0.5, Math.floor(Math.random() * MAP_SIZE) - MAP_SIZE / 2);
+                inst.position = new BABYLON.Vector3(
+                    Math.floor(Math.random() * MAP_SIZE) - MAP_SIZE / 2, 0.5,
+                    Math.floor(Math.random() * MAP_SIZE) - MAP_SIZE / 2);
             }
 
             player = new BABYLON.TransformNode("playerRoot", scene);
@@ -170,11 +199,10 @@
                     player.rotation.x = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, player.rotation.x));
                 }
             };
-            var changeCallback = function () {
+            document.addEventListener('pointerlockchange', function () {
                 if (document.pointerLockElement === canvas) document.addEventListener("mousemove", mouseMove, false);
                 else document.removeEventListener("mousemove", mouseMove, false);
-            };
-            document.addEventListener('pointerlockchange', changeCallback, false);
+            }, false);
             canvas.onclick = function () { if (!scene.debugLayer.isVisible()) canvas.requestPointerLock(); };
 
             var advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI('HUD');
@@ -183,7 +211,7 @@
             statsText.text = "FPS: 0\nBullets: 0\nJumps: 0";
             statsText.color = "white"; statsText.fontSize = 18;
             statsText.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
-            statsText.textVerticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
+            statsText.textVerticalAlignment   = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
             statsText.left = "20px"; statsText.top = "20px";
             advancedTexture.addControl(statsText);
 
@@ -191,129 +219,214 @@
             buildInfo.text = "Iron Will First Person WebGPU Engine with Babylon 8 and HavokSDK 5 - (Experimental Renderer).";
             buildInfo.color = "rgba(255,255,255,0.6)"; buildInfo.fontSize = 14;
             buildInfo.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
-            buildInfo.textVerticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_BOTTOM;
+            buildInfo.textVerticalAlignment   = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_BOTTOM;
             buildInfo.left = "-20px"; buildInfo.top = "-20px";
             advancedTexture.addControl(buildInfo);
 
+            // Keys 1-4 + existing controls
             window.addEventListener("keydown", function (evt) {
                 if (evt.keyCode == 87) keys.forward = 1;
-                if (evt.keyCode == 83) keys.back = 1;
-                if (evt.keyCode == 68) keys.left = 1;
-                if (evt.keyCode == 65) keys.right = 1;
-                if (evt.keyCode == 16) keys.shift = 1;
-                if (evt.keyCode == 32) keys.jump = 1;
+                if (evt.keyCode == 83) keys.back    = 1;
+                if (evt.keyCode == 68) keys.left    = 1;
+                if (evt.keyCode == 65) keys.right   = 1;
+                if (evt.keyCode == 16) keys.shift   = 1;
+                if (evt.keyCode == 32) keys.jump    = 1;
                 if (evt.keyCode == 49) keys.weapon1 = 1;
                 if (evt.keyCode == 50) keys.weapon2 = 1;
+                if (evt.keyCode == 51) keys.weapon3 = 1;
+                if (evt.keyCode == 52) keys.weapon4 = 1;
             });
             window.addEventListener("keyup", function (evt) {
                 if (evt.keyCode == 87) keys.forward = 0;
-                if (evt.keyCode == 83) keys.back = 0;
-                if (evt.keyCode == 68) keys.left = 0;
-                if (evt.keyCode == 65) keys.right = 0;
-                if (evt.keyCode == 16) keys.shift = 0;
-                if (evt.keyCode == 32) keys.jump = 0;
+                if (evt.keyCode == 83) keys.back    = 0;
+                if (evt.keyCode == 68) keys.left    = 0;
+                if (evt.keyCode == 65) keys.right   = 0;
+                if (evt.keyCode == 16) keys.shift   = 0;
+                if (evt.keyCode == 32) keys.jump    = 0;
                 if (evt.keyCode == 49) keys.weapon1 = 0;
                 if (evt.keyCode == 50) keys.weapon2 = 0;
+                if (evt.keyCode == 51) keys.weapon3 = 0;
+                if (evt.keyCode == 52) keys.weapon4 = 0;
             });
             window.addEventListener("wheel", function (evt) {
-                if (evt.deltaY < 0) keys.scrollUp = 1;
+                if (evt.deltaY < 0) keys.scrollUp   = 1;
                 else if (evt.deltaY > 0) keys.scrollDown = 1;
             }, { passive: true });
 
+            // ─── LOAD WEAPON / FULL-BODY MESH ───────────────────────────────────
             function loadWeapon(slot, headRef) {
                 var w = WEAPONS[slot];
                 if (!w) return;
+
                 if (currentIdle) try { currentIdle.stop(); } catch (_) {}
                 if (currentWalk) try { currentWalk.stop(); } catch (_) {}
+
+                // Detach head from any old tracker
                 if (headRef) headRef.parent = null;
-                if (weaponRoot) try { weaponRoot.dispose(); } catch (_) {}
+                if (headTracker) try { headTracker.dispose(); headTracker = null; } catch (_) {}
+                if (weaponRoot)  try { weaponRoot.dispose();  weaponRoot  = null; } catch (_) {}
+
                 weaponSlot = slot;
                 currentRecoilPos.set(0, 0, 0);
-                BABYLON.SceneLoader.ImportMeshAsync("", w.url, w.file, scene).then(function (result) {
-                    var newMeshes = result.meshes;
-                    if (!newMeshes || !newMeshes.length) return;
-                    weaponRoot = newMeshes[0];
-                    weaponRoot.parent = player;
-                    weaponRoot.position.set(0, 0, 0);
-                    weaponRoot.rotation.set(0, 0, 0);
-                    weaponRoot.scaling.set(1, 1, 1);
-                    cameraNode = scene.getNodeByName('camera');
-                    if (cameraNode && headRef) {
-                        headRef.parent = cameraNode;
-                        headRef.position.copyFrom(BASE_HEAD_POS);
-                        headRef.rotation.set(0, 0, 0);
-                    }
-                    var ag = result.animationGroups || [];
-                    currentIdle = ag.find(function (a) { return a.name === "idle"; }) || scene.getAnimationGroupByName("idle");
-                    currentWalk = ag.find(function (a) { return a.name === "walk"; }) || scene.getAnimationGroupByName("walk");
-                    w.hideList.forEach(function (name) {
-                        var m = scene.getMeshByName(name) || scene.getNodeByName(name);
-                        if (m) m.setEnabled(false);
-                    });
-                    isWalking = false;
-                    if (currentIdle) currentIdle.start(true);
-                }).catch(function (err) { console.warn("loadWeapon error:", err); });
+
+                // Use empty rootUrl + full URL as filename + ".glb" plugin hint
+                // so Babylon's GLB loader activates even though the URL has no extension.
+                BABYLON.SceneLoader.ImportMeshAsync("", "", w.url, scene, null, ".glb")
+                    .then(function (result) {
+                        var newMeshes = result.meshes;
+                        if (!newMeshes || !newMeshes.length) return;
+
+                        weaponRoot = newMeshes[0];
+                        weaponRoot.parent = player;
+
+                        // ── Full-body alignment ──────────────────────────────
+                        // Player node sits at PLAYER_HEIGHT above ground.
+                        // Offsetting the mesh root down by that amount plants the
+                        // character's feet on the ground plane.
+                        weaponRoot.position.set(0, -PLAYER_HEIGHT, 0);
+                        weaponRoot.rotation.set(0, 0, 0);
+                        weaponRoot.scaling.set(1, 1, 1);
+
+                        // ── Head-bone camera tracking ────────────────────────
+                        // Search skeletons for a bone whose name contains "head"
+                        // (covers "Head", "mixamorig:Head", "Bip001_Head", etc.).
+                        var headBoneFound = false;
+                        if (result.skeletons && result.skeletons.length > 0) {
+                            var skeleton = result.skeletons[0];
+                            var headBone = skeleton.bones.find(function (b) {
+                                return b.name.toLowerCase().indexOf("head") !== -1;
+                            });
+
+                            if (headBone) {
+                                // Find the skinned mesh that owns this skeleton
+                                var skinnedMesh = newMeshes.find(function (m) {
+                                    return m.skeleton === skeleton;
+                                }) || newMeshes[1] || newMeshes[0];
+
+                                // Attach a tracking node to the head bone
+                                headTracker = new BABYLON.TransformNode("headTracker", scene);
+                                headTracker.attachToBone(headBone, skinnedMesh);
+                                // Small eye-socket offset (tweak per character if needed)
+                                headTracker.position = new BABYLON.Vector3(0, 0.08, 0.06);
+
+                                if (headRef) {
+                                    headRef.parent = headTracker;
+                                    headRef.position.copyFrom(BABYLON.Vector3.Zero());
+                                    headRef.rotation.set(0, 0, 0);
+                                }
+                                headBoneFound = true;
+                            }
+                        }
+
+                        // Fallback: use the old cameraNode approach if no head bone
+                        if (!headBoneFound) {
+                            cameraNode = scene.getNodeByName('camera');
+                            if (cameraNode && headRef) {
+                                headRef.parent = cameraNode;
+                                headRef.position.copyFrom(BASE_HEAD_POS);
+                                headRef.rotation.set(0, 0, 0);
+                            }
+                        }
+
+                        // Animations
+                        var ag = result.animationGroups || [];
+                        currentIdle = ag.find(function (a) { return a.name === "idle"; })
+                                   || scene.getAnimationGroupByName("idle");
+                        currentWalk = ag.find(function (a) { return a.name === "walk"; })
+                                   || scene.getAnimationGroupByName("walk");
+
+                        // Hide listed meshes / nodes
+                        w.hideList.forEach(function (name) {
+                            var m = scene.getMeshByName(name) || scene.getNodeByName(name);
+                            if (m) m.setEnabled(false);
+                        });
+
+                        isWalking = false;
+                        if (currentIdle) currentIdle.start(true);
+                    })
+                    .catch(function (err) { console.warn("loadWeapon error:", err); });
             }
+            // ────────────────────────────────────────────────────────────────────
 
             loadWeapon(0, head);
             var isWalking = false;
 
             scene.onPointerDown = function (evt) {
                 if (evt.button === 0) isFiring = true;
-                if (evt.button === 2) isAds = true;
+                if (evt.button === 2) isAds    = true;
             };
             scene.onPointerUp = function (evt) {
                 if (evt.button === 0) isFiring = false;
-                if (evt.button === 2) isAds = false;
+                if (evt.button === 2) isAds    = false;
             };
 
-            var prevWeapon1 = 0, prevWeapon2 = 0, prevScrollUp = 0, prevScrollDown = 0;
+            var prevWeapon1 = 0, prevWeapon2 = 0, prevWeapon3 = 0, prevWeapon4 = 0;
+            var prevScrollUp = 0, prevScrollDown = 0;
+
             scene.onBeforeRenderObservable.add(function () {
                 var deltaTime = engine.getDeltaTime();
                 var now = Date.now();
-                statsText.text = "FPS: " + Math.round(engine.getFps()) + " (" + Math.round(deltaTime) + " ms)\nBullets: " + bulletCount + "\nJumps: " + jumpCount + "\nWeapon: " + (weaponSlot === 0 ? "Rifle" : "Pistol");
 
-                var isMoving = !!(keys.forward || keys.back || keys.left || keys.right);
+                statsText.text = "FPS: " + Math.round(engine.getFps()) +
+                    " (" + Math.round(deltaTime) + " ms)\n" +
+                    "Bullets: " + bulletCount + "\nJumps: " + jumpCount +
+                    "\nWeapon: " + (WEAPONS[weaponSlot] ? WEAPONS[weaponSlot].name : weaponSlot);
+
+                var isMoving   = !!(keys.forward || keys.back || keys.left || keys.right);
                 var isSprinting = isMoving && keys.shift && !isAds;
-                updateCrosshairHTML(isMoving, isSprinting, isFiring, isAds, currentRecoilPos.x, currentRecoilPos.y, deltaTime);
+                updateCrosshairHTML(isMoving, isSprinting, isFiring, isAds,
+                                    currentRecoilPos.x, currentRecoilPos.y, deltaTime);
 
+                // Weapon hotkeys 1-4
                 if (keys.weapon1 && !prevWeapon1) loadWeapon(0, head);
                 prevWeapon1 = keys.weapon1;
                 if (keys.weapon2 && !prevWeapon2) loadWeapon(1, head);
                 prevWeapon2 = keys.weapon2;
-                if (keys.scrollUp && !prevScrollUp) { loadWeapon((weaponSlot + 1) % 2, head); }
-                prevScrollUp = keys.scrollUp;
-                if (keys.scrollDown && !prevScrollDown) { loadWeapon((weaponSlot + 1) % 2, head); }
-                prevScrollDown = keys.scrollDown;
-                keys.scrollUp = 0;
-                keys.scrollDown = 0;
+                if (keys.weapon3 && !prevWeapon3) loadWeapon(2, head);
+                prevWeapon3 = keys.weapon3;
+                if (keys.weapon4 && !prevWeapon4) loadWeapon(3, head);
+                prevWeapon4 = keys.weapon4;
 
+                // Scroll cycles through all 4 weapons
+                if (keys.scrollUp   && !prevScrollUp)   loadWeapon((weaponSlot + 1) % TOTAL_WEAPONS, head);
+                prevScrollUp = keys.scrollUp;
+                if (keys.scrollDown && !prevScrollDown)  loadWeapon((weaponSlot + TOTAL_WEAPONS - 1) % TOTAL_WEAPONS, head);
+                prevScrollDown = keys.scrollDown;
+                keys.scrollUp = 0; keys.scrollDown = 0;
+
+                // Firing
                 if (isFiring && now - lastFireTime > FIRE_RATE) {
                     bulletCount++;
                     lastFireTime = now;
                     var ray = fpsCamera.getForwardRay(100);
                     var pickInfo = scene.pickWithRay(ray, function (mesh) { return mesh !== ground && mesh.isPickable; });
-                    var targetPoint = pickInfo.hit ? pickInfo.pickedPoint : ray.origin.add(ray.direction.scale(100));
+                    var targetPoint = pickInfo.hit
+                        ? pickInfo.pickedPoint
+                        : ray.origin.add(ray.direction.scale(100));
                     var offset = isAds ? BULLET_EMITTER_ADS_OFFSET : BULLET_EMITTER_OFFSET;
                     var bulletOrigin = BABYLON.Vector3.TransformCoordinates(offset, fpsCamera.getWorldMatrix());
-                    var tracer = BABYLON.MeshBuilder.CreateLines("tracer", { points: [bulletOrigin, bulletOrigin.add(targetPoint.subtract(bulletOrigin).normalize().scale(0.5))] }, scene);
+                    var tracer = BABYLON.MeshBuilder.CreateLines("tracer", {
+                        points: [bulletOrigin, bulletOrigin.add(targetPoint.subtract(bulletOrigin).normalize().scale(0.5))]
+                    }, scene);
                     tracer.color = new BABYLON.Color3(1, 0.8, 0.2);
                     setTimeout(function () { tracer.dispose(); }, 50);
                     currentRecoilPos.x += (Math.random() - 0.5) * RECOIL_STRENGTH_SIDE;
                     currentRecoilPos.y += RECOIL_STRENGTH_UP;
                     currentRecoilPos.z -= RECOIL_STRENGTH_BACK;
                 }
-                currentRecoilPos = BABYLON.Vector3.Lerp(currentRecoilPos, BABYLON.Vector3.Zero(), RECOIL_RECOVERY * (deltaTime / 16));
+                currentRecoilPos = BABYLON.Vector3.Lerp(currentRecoilPos, BABYLON.Vector3.Zero(),
+                                                        RECOIL_RECOVERY * (deltaTime / 16));
 
+                // Movement
                 var currentSpeed = (keys.shift && !isAds) ? SPRINT_SPEED : WALK_SPEED;
                 var moveVector = BABYLON.Vector3.Zero();
                 var rotMat = BABYLON.Matrix.RotationY(player.rotation.y);
                 var forwardDir = BABYLON.Vector3.TransformCoordinates(new BABYLON.Vector3(0, 0, 1), rotMat);
-                var rightDir = BABYLON.Vector3.TransformCoordinates(new BABYLON.Vector3(1, 0, 0), rotMat);
+                var rightDir   = BABYLON.Vector3.TransformCoordinates(new BABYLON.Vector3(1, 0, 0), rotMat);
                 if (keys.forward) moveVector.addInPlace(forwardDir);
-                if (keys.back) moveVector.subtractInPlace(forwardDir);
-                if (keys.left) moveVector.subtractInPlace(rightDir);
-                if (keys.right) moveVector.addInPlace(rightDir);
+                if (keys.back)    moveVector.subtractInPlace(forwardDir);
+                if (keys.left)    moveVector.subtractInPlace(rightDir);
+                if (keys.right)   moveVector.addInPlace(rightDir);
                 var hasInput = moveVector.lengthSquared() > 0;
                 if (hasInput) moveVector.normalize();
 
@@ -342,13 +455,15 @@
                 }
                 player.position.addInPlace(velocityXZ);
 
+                // Animation blending
                 if (currentIdle && currentWalk) {
                     var movementSpeed = Math.sqrt(velocityXZ.x * velocityXZ.x + velocityXZ.z * velocityXZ.z);
                     var shouldWalk = !isAds && !isFiring && movementSpeed > 0.08;
-                    if (shouldWalk && !isWalking) { currentIdle.stop(); currentWalk.start(true); isWalking = true; }
+                    if (shouldWalk && !isWalking)  { currentIdle.stop(); currentWalk.start(true); isWalking = true;  }
                     else if (!shouldWalk && isWalking) { currentWalk.stop(); currentIdle.start(true); isWalking = false; }
                 }
 
+                // Jump / gravity
                 if (isGrounded) {
                     if (keys.jump) { verticalVelocity = JUMP_FORCE; isGrounded = false; airMaxSpeed = currentSpeed; jumpCount++; }
                 } else {
@@ -356,14 +471,26 @@
                     verticalVelocity += g;
                     if (verticalVelocity < 0) verticalVelocity *= AIR_DRAG;
                     player.position.y += verticalVelocity;
-                    if (player.position.y <= PLAYER_HEIGHT) { player.position.y = PLAYER_HEIGHT; verticalVelocity = 0; velocityXZ.scaleInPlace(0.7); isGrounded = true; airMaxSpeed = 0; }
+                    if (player.position.y <= PLAYER_HEIGHT) {
+                        player.position.y = PLAYER_HEIGHT;
+                        verticalVelocity = 0;
+                        velocityXZ.scaleInPlace(0.7);
+                        isGrounded = true;
+                        airMaxSpeed = 0;
+                    }
                 }
 
-                if (cameraNode) {
-                    var modePos = isAds ? ADS_HEAD_POS : BASE_HEAD_POS;
-                    var targetPos = modePos.add(currentRecoilPos).add(CAM_GLOBAL_OFFSET);
-                    head.position = BABYLON.Vector3.Lerp(head.position, targetPos, 0.2 * (deltaTime / 16));
-                    fpsCamera.position.copyFrom(head.position);
+                // Camera positioning — prefers head-bone tracker, falls back to cameraNode anchor
+                var eyeSource = headTracker ? head : (cameraNode ? head : null);
+                if (eyeSource) {
+                    if (!headTracker && cameraNode) {
+                        var modePos = isAds ? ADS_HEAD_POS : BASE_HEAD_POS;
+                        var targetPos = modePos.add(currentRecoilPos).add(CAM_GLOBAL_OFFSET);
+                        head.position = BABYLON.Vector3.Lerp(head.position, targetPos, 0.2 * (deltaTime / 16));
+                    }
+                    fpsCamera.position.copyFrom(head.getAbsolutePosition
+                        ? head.getAbsolutePosition()
+                        : head.absolutePosition || head.position);
                 }
             });
 
@@ -387,5 +514,4 @@
             try { window.parent.postMessage({ type: 'basalt_scene_ready' }, '*'); } catch (_) {}
         }
     </script>
-</body>
-</html>
+</body></html>
